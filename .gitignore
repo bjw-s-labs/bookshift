@@ -1,0 +1,4 @@
+/config.yaml
+
+# goreleaser
+dist/
