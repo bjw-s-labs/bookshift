@@ -1,0 +1,63 @@
+---
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+version: 2
+
+project_name: bookshift
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: bookshift
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+      - arm64
+    goos:
+      - linux
+      - darwin
+    ldflags:
+      - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
+  - id: kobo
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - arm
+    goos:
+      - linux
+    ldflags:
+      - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
+    binary: usr/local/bookshift/bookshift
+
+archives:
+  - id: bookshift
+    name_template: "{{.ProjectName}}_{{.Os}}_{{.Arch}}"
+    builds:
+      - bookshift
+  - id: kobo
+    name_template: "KoboRoot"
+    builds:
+      - kobo
+    formats:
+      - tgz
+    files:
+      - KoboRoot/*
+      - src: config.yaml.dist
+        dst: usr/local/bookshift/config.yaml.dist
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^Merge pull request #\d+ from'
+      - "^docs"
+      - "^test"

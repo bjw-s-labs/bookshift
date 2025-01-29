@@ -1,0 +1,4 @@
+---
+target_folder:
+nfs_shares: []
+smb_shares: []
