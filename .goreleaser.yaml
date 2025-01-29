@@ -1,0 +1,55 @@
+---
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+version: 2
+
+project_name: bookshift
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: bookshift
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+      - arm64
+    goos:
+      - linux
+      - darwin
+    ldflags:
+      - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
+  - id: kobo
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - arm
+    goos:
+      - linux
+    ldflags:
+      - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
+
+archives:
+  - name_template: "KoboRoot"
+    builds:
+      - bookshift
+    formats:
+      - tar.gz
+
+# KoboRoot/usr/local/bookshift/bookshift
+
+# changelog:
+#   sort: asc
+#   filters:
+#     exclude:
+#       - "^docs:"
+#       - "^test:"
+
+# release:
+#   footer: >-
+
+#     ---
+
+#     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
