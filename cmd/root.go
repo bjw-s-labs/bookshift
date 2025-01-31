@@ -80,8 +80,7 @@ func Execute() error {
 	}
 
 	// Load the configuration from the config file
-	err := appConfig.Load(cli.ConfigFile)
-	if err != nil {
+	if err := appConfig.Load(cli.ConfigFile); err != nil {
 		errors := strings.Split(err.Error(), "\n")
 		for _, e := range errors {
 			slog.Error(e)
@@ -95,8 +94,7 @@ func Execute() error {
 	slog.Debug("Running", "config", appConfig)
 
 	// Run the application
-	err = ctx.Run(&appConfig)
-	if err != nil {
+	if err := ctx.Run(&appConfig); err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}

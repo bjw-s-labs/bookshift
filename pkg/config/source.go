@@ -11,7 +11,6 @@ type Source struct {
 }
 
 func (src *Source) UnmarshalYAML(input []byte) error {
-	// func (src *Source) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var tmpSource struct {
 		Type   string
 		Config interface{}

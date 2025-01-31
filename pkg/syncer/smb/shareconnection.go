@@ -23,8 +23,7 @@ func NewSmbShareConnection(share string, conn *SmbConnection) *SmbShareConnectio
 }
 
 func (s *SmbShareConnection) Connect() error {
-	err := s.SmbConnection.Connection.TreeConnect(s.Share)
-	if err != nil {
+	if err := s.SmbConnection.Connection.TreeConnect(s.Share); err != nil {
 		if err == smb.StatusMap[smb.StatusBadNetworkName] {
 			return fmt.Errorf("share %s not found", s.Share)
 		}
@@ -34,8 +33,7 @@ func (s *SmbShareConnection) Connect() error {
 }
 
 func (s *SmbShareConnection) Disconnect() error {
-	err := s.SmbConnection.Connection.TreeDisconnect(s.Share)
-	if err != nil {
+	if err := s.SmbConnection.Connection.TreeDisconnect(s.Share); err != nil {
 		return err
 	}
 	return nil
@@ -58,7 +56,6 @@ func (s *SmbShareConnection) fetchAllFiles(rootFolder string, subfolder string, 
 	}
 
 	files, err := s.SmbConnection.Connection.ListDirectory(s.Share, subfolder, "*")
-
 	if err != nil {
 		if err == smb.StatusMap[smb.StatusAccessDenied] {
 			return nil, err

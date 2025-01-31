@@ -45,8 +45,7 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	// Create folder structure if required
 	if _, err := os.Stat(dstFolder); os.IsNotExist(err) {
 		slog.Info("Creating local folder", "folder", dstFolder)
-		err := os.MkdirAll(dstFolder, os.ModeDir|0755)
-		if err != nil {
+		if err := os.MkdirAll(dstFolder, os.ModeDir|0755); err != nil {
 			return err
 		}
 	}
@@ -81,8 +80,7 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 
 	// Delete the source file if requested
 	if deleteSourcFile {
-		err = f.Delete()
-		if err != nil {
+		if err := f.Delete(); err != nil {
 			return err
 		}
 	}
@@ -91,8 +89,7 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 }
 
 func (f *NfsFile) Delete() error {
-	err := f.nfsFolder.NfsClient.Client.DeleteFile(f.remotePath)
-	if err != nil {
+	if err := f.nfsFolder.NfsClient.Client.DeleteFile(f.remotePath); err != nil {
 		return fmt.Errorf("failed to delete the file %s: (%w)", f.remotePath, err)
 	}
 	slog.Info("Deleted file from NFS share", "host", f.nfsFolder.NfsClient.Host, "file", f.remotePath)
