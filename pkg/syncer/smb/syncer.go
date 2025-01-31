@@ -7,10 +7,10 @@ import (
 )
 
 type SmbSyncer struct {
-	config *config.SmbNetworkShare
+	config *config.SmbNetworkShareConfig
 }
 
-func NewSmbSyncer(shareConfig config.SmbNetworkShare) *SmbSyncer {
+func NewSmbSyncer(shareConfig config.SmbNetworkShareConfig) *SmbSyncer {
 	// Set default port
 	if !(shareConfig.Port > 0) {
 		shareConfig.Port = 445

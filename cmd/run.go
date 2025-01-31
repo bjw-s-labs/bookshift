@@ -9,19 +9,21 @@ import (
 type RunCommand struct{}
 
 func (*RunCommand) Run(cfg *config.Config) error {
-	for _, nfsShare := range cfg.NfsShares {
-		nfsSyncer := nfs.NewNfsSyncer(nfsShare)
-		err := nfsSyncer.Run(cfg.TargetFolder, cfg.OverwriteExistingFiles)
-		if err != nil {
-			return err
-		}
-	}
+	for _, src := range cfg.Sources {
+		switch src.Type {
+		case "nfs":
+			nfsSyncer := nfs.NewNfsSyncer(src.Config.(config.NfsNetworkShareConfig))
+			err := nfsSyncer.Run(cfg.TargetFolder, cfg.OverwriteExistingFiles)
+			if err != nil {
+				return err
+			}
 
-	for _, smbShare := range cfg.SmbShares {
-		smbSyncer := smb.NewSmbSyncer(smbShare)
-		err := smbSyncer.Run(cfg.TargetFolder, cfg.OverwriteExistingFiles)
-		if err != nil {
-			return err
+		case "smb":
+			smbSyncer := smb.NewSmbSyncer(src.Config.(config.SmbNetworkShareConfig))
+			err := smbSyncer.Run(cfg.TargetFolder, cfg.OverwriteExistingFiles)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

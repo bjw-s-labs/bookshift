@@ -7,10 +7,10 @@ import (
 )
 
 type NfsSyncer struct {
-	config *config.NfsNetworkShare
+	config *config.NfsNetworkShareConfig
 }
 
-func NewNfsSyncer(shareConfig config.NfsNetworkShare) *NfsSyncer {
+func NewNfsSyncer(shareConfig config.NfsNetworkShareConfig) *NfsSyncer {
 	// Set default port
 	if !(shareConfig.Port > 0) {
 		shareConfig.Port = 2049
