@@ -9,6 +9,7 @@ require (
 	github.com/goccy/go-yaml v1.15.16
 	github.com/jfjallid/go-smb v0.5.7
 	github.com/kha7iq/go-nfs-client v1.0.0
+	github.com/lmittmann/tint v1.0.7
 	github.com/schollz/progressbar/v3 v3.18.0
 )
 

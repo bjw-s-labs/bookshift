@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/alecthomas/kong"
 	"github.com/bjw-s-labs/bookshift/pkg/config"
+	"github.com/lmittmann/tint"
 )
 
 const appName = "bookshift"
@@ -40,9 +42,14 @@ func Execute() error {
 	// Configure the default logger
 	logLevel := new(slog.LevelVar)
 	logLevel.Set(slog.LevelInfo)
-	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: logLevel,
-	}))
+	logger := slog.New(
+		tint.NewHandler(
+			os.Stderr,
+			&tint.Options{
+				Level: logLevel,
+			},
+		),
+	)
 	slog.SetDefault(logger)
 
 	cli := CLI{
@@ -75,7 +82,10 @@ func Execute() error {
 	// Load the configuration from the config file
 	err := appConfig.Load(cli.ConfigFile)
 	if err != nil {
-		slog.Error(err.Error())
+		errors := strings.Split(err.Error(), "\n")
+		for _, e := range errors {
+			slog.Error(e)
+		}
 		os.Exit(1)
 	}
 

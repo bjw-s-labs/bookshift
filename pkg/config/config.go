@@ -2,10 +2,8 @@ package config
 
 import (
 	"os"
-	"strings"
 
-	"github.com/go-playground/validator"
-	"github.com/goccy/go-yaml"
+	"github.com/bjw-s-labs/bookshift/pkg/util"
 )
 
 type Config struct {
@@ -21,13 +19,7 @@ func (cfg *Config) Load(path string) error {
 		return err
 	}
 
-	validate := validator.New()
-	dec := yaml.NewDecoder(
-		strings.NewReader(string(ymlFile)),
-		yaml.Validator(validate),
-		yaml.Strict(),
-	)
-	if err := dec.Decode(cfg); err != nil {
+	if err := util.UnmarshalYamlIntoStruct(string(ymlFile), cfg); err != nil {
 		return err
 	}
 

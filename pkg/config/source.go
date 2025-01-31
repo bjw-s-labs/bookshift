@@ -1,16 +1,22 @@
 package config
 
+import (
+	"github.com/bjw-s-labs/bookshift/pkg/util"
+	"github.com/goccy/go-yaml"
+)
+
 type Source struct {
-	Type   string      `yaml:"type"`
+	Type   string      `yaml:"type" validate:"oneof=smb nfs"`
 	Config interface{} `yaml:"config" validate:"required"`
 }
 
-func (src *Source) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (src *Source) UnmarshalYAML(input []byte) error {
+	// func (src *Source) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var tmpSource struct {
 		Type   string
 		Config interface{}
 	}
-	if err := unmarshal(&tmpSource); err != nil {
+	if err := yaml.Unmarshal(input, &tmpSource); err != nil {
 		return err
 	}
 
@@ -20,7 +26,8 @@ func (src *Source) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			Type   string
 			Config NfsNetworkShareConfig
 		}
-		if err := unmarshal(&config); err != nil {
+
+		if err := util.UnmarshalYamlIntoStruct(string(input), &config); err != nil {
 			return err
 		}
 		src.Type = config.Type
@@ -31,7 +38,7 @@ func (src *Source) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			Type   string
 			Config SmbNetworkShareConfig
 		}
-		if err := unmarshal(&config); err != nil {
+		if err := util.UnmarshalYamlIntoStruct(string(input), &config); err != nil {
 			return err
 		}
 		src.Type = config.Type

@@ -39,8 +39,6 @@ func (s *NfsFolder) fetchAllFiles(rootFolder string, folder string, recurse bool
 		return nil, err
 	}
 
-	slog.Debug("result", "files", files)
-
 	for _, file := range files {
 		fullPath := path.Join(folder, file.Name)
 		if file.IsDir {
