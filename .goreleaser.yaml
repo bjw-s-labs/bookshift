@@ -30,7 +30,7 @@ builds:
       - linux
     ldflags:
       - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
-    binary: usr/local/bookshift/bookshift
+    binary: KoboRoot/usr/local/bookshift/bookshift
 
 archives:
   - id: bookshift
@@ -44,9 +44,10 @@ archives:
     formats:
       - tgz
     files:
-      - KoboRoot/*
+      - src: kobo/*
+        dst: /
       - src: config.yaml.dist
-        dst: usr/local/bookshift/config.yaml.dist
+        dst: /KoboRoot/usr/local/bookshift/config.yaml.dist
 
 checksum:
   name_template: "checksums.txt"
