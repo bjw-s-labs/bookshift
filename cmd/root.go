@@ -37,6 +37,14 @@ func Execute() error {
 		version = "development"
 	}
 
+	// Configure the default logger
+	logLevel := new(slog.LevelVar)
+	logLevel.Set(slog.LevelInfo)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: logLevel,
+	}))
+	slog.SetDefault(logger)
+
 	cli := CLI{
 		Version: VersionFlag(version),
 	}
@@ -59,14 +67,24 @@ func Execute() error {
 		},
 	)
 
-	var appConfig config.Config
+	// Create Configuration object and set defaults
+	appConfig := config.Config{
+		LogLevel: "info",
+	}
 
+	// Load the configuration from the config file
 	err := appConfig.Load(cli.ConfigFile)
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
+	// Set the log level based on the configuration
+	logLevel.UnmarshalText([]byte(appConfig.LogLevel))
+
+	slog.Debug("Running", "config", appConfig)
+
+	// Run the application
 	err = ctx.Run(&appConfig)
 	if err != nil {
 		slog.Error(err.Error())

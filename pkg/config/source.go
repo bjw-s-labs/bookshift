@@ -1,52 +1,42 @@
 package config
 
-import (
-	"github.com/gookit/validate"
-	"gopkg.in/yaml.v3"
-)
-
 type Source struct {
 	Type   string      `yaml:"type"`
 	Config interface{} `yaml:"config" validate:"required"`
 }
 
-// Interface compliance
-var _ yaml.Unmarshaler = &Source{}
-
-func (src *Source) UnmarshalYAML(node *yaml.Node) error {
-	var t struct {
-		Type string `yaml:"type"`
+func (src *Source) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var tmpSource struct {
+		Type   string
+		Config interface{}
 	}
-	if err := node.Decode(&t); err != nil {
+	if err := unmarshal(&tmpSource); err != nil {
 		return err
 	}
 
-	switch t.Type {
+	switch tmpSource.Type {
 	case "nfs":
-		var c struct {
-			Config NfsNetworkShareConfig `yaml:"config"`
+		var config struct {
+			Type   string
+			Config NfsNetworkShareConfig
 		}
-		if err := node.Decode(&c); err != nil {
+		if err := unmarshal(&config); err != nil {
 			return err
 		}
-		src.Type = t.Type
-		src.Config = c.Config
+		src.Type = config.Type
+		src.Config = config.Config
 
 	case "smb":
-		var c struct {
-			Config SmbNetworkShareConfig `yaml:"config"`
+		var config struct {
+			Type   string
+			Config SmbNetworkShareConfig
 		}
-		if err := node.Decode(&c); err != nil {
+		if err := unmarshal(&config); err != nil {
 			return err
 		}
-		src.Type = t.Type
-		src.Config = c.Config
+		src.Type = config.Type
+		src.Config = config.Config
 	}
-	return nil
-}
 
-func (src *Source) Validate() validate.Errors {
-	v := validate.Struct(src.Config)
-	v.StopOnError = false
-	return v.ValidateE()
+	return nil
 }
