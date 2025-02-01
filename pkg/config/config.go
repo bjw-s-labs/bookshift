@@ -10,6 +10,7 @@ type Config struct {
 	LogLevel               string   `yaml:"log_level"`
 	TargetFolder           string   `yaml:"target_folder" validate:"required"`
 	OverwriteExistingFiles bool     `yaml:"overwrite_existing_files"`
+	ValidExtensions        []string `yaml:"valid_extensions" validate:"required"`
 	Sources                []Source `yaml:"sources"`
 }
 

@@ -21,7 +21,7 @@ func NewNfsSyncer(shareConfig config.NfsNetworkShareConfig) *NfsSyncer {
 	}
 }
 
-func (s *NfsSyncer) Run(targetFolder string, overwriteExistingFiles bool) error {
+func (s *NfsSyncer) Run(targetFolder string, validExtensions []string, overwriteExistingFiles bool) error {
 	// Connect to the NFS server
 	nfsClient := NfsClient{
 		Host: s.config.Host,
@@ -36,7 +36,7 @@ func (s *NfsSyncer) Run(targetFolder string, overwriteExistingFiles bool) error 
 	nfsFolder := NewNfsFolder(s.config.Folder, &nfsClient)
 
 	// Fetch all files in the folder
-	allFiles, err := nfsFolder.FetchFiles(s.config.Folder, true)
+	allFiles, err := nfsFolder.FetchFiles(s.config.Folder, validExtensions, true)
 	if err != nil {
 		return err
 	}

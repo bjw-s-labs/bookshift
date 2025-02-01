@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/jfjallid/go-smb/smb"
@@ -39,8 +40,8 @@ func (s *SmbShareConnection) Disconnect() error {
 	return nil
 }
 
-func (s *SmbShareConnection) FetchFiles(folder string, recurse bool) ([]SmbFile, error) {
-	allFiles, err := s.fetchAllFiles(folder, "", recurse)
+func (s *SmbShareConnection) FetchFiles(folder string, validExtensions []string, recurse bool) ([]SmbFile, error) {
+	allFiles, err := s.fetchAllFiles(folder, "", validExtensions, recurse)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +49,7 @@ func (s *SmbShareConnection) FetchFiles(folder string, recurse bool) ([]SmbFile,
 	return allFiles, nil
 }
 
-func (s *SmbShareConnection) fetchAllFiles(rootFolder string, subfolder string, recurse bool) ([]SmbFile, error) {
+func (s *SmbShareConnection) fetchAllFiles(rootFolder string, subfolder string, validExtensions []string, recurse bool) ([]SmbFile, error) {
 	var allFiles []SmbFile
 
 	if subfolder == "" {
@@ -66,13 +67,18 @@ func (s *SmbShareConnection) fetchAllFiles(rootFolder string, subfolder string, 
 	for _, file := range files {
 		cleanPath := strings.ReplaceAll(file.FullPath, "\\", string(os.PathSeparator))
 		if file.IsDir && !file.IsJunction {
-			tmpFiles, err := s.fetchAllFiles(rootFolder, cleanPath, recurse)
+			tmpFiles, err := s.fetchAllFiles(rootFolder, cleanPath, validExtensions, recurse)
 			if err != nil {
 				slog.Warn("Failed to list files in directory", "directory", cleanPath, "error", err)
 				continue
 			}
 			allFiles = append(allFiles, tmpFiles...)
 		} else if !file.IsDir && !file.IsJunction {
+			extension := path.Ext(cleanPath)
+			if len(validExtensions) > 0 && !slices.Contains(validExtensions, extension) {
+				continue
+			}
+
 			parentFolder := path.Dir(cleanPath)
 			_, subFolder, _ := strings.Cut(parentFolder, rootFolder)
 

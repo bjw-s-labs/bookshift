@@ -21,3 +21,15 @@ type SmbNetworkShareConfig struct {
 	KeepFolderStructure      bool             `yaml:"keep_folderstructure"`
 	RemoveFilesAfterDownload bool             `yaml:"remove_files_after_download"`
 }
+
+type ImapConfig struct {
+	Host                      string           `yaml:"host" validate:"required"`
+	Port                      int              `yaml:"port"`
+	Username                  string           `yaml:"username"`
+	Password                  sensitive.String `yaml:"password"`
+	Folder                    string           `yaml:"folder" validate:"required"`
+	FilterField               string           `yaml:"filter_field" validate:"required,oneof=to subject"`
+	FilterValue               string           `yaml:"filter_value" validate:"required"`
+	ProcessReadEmails         bool             `yaml:"process_read_emails"`
+	RemoveEmailsAfterDownload bool             `yaml:"remove_emails_after_download"`
+}

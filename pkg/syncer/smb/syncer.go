@@ -21,7 +21,7 @@ func NewSmbSyncer(shareConfig config.SmbNetworkShareConfig) *SmbSyncer {
 	}
 }
 
-func (s *SmbSyncer) Run(targetFolder string, overwriteExistingFiles bool) error {
+func (s *SmbSyncer) Run(targetFolder string, validExtensions []string, overwriteExistingFiles bool) error {
 	// Connect to the SMB server
 	smbConnection := SmbConnection{
 		Host:     s.config.Host,
@@ -44,7 +44,7 @@ func (s *SmbSyncer) Run(targetFolder string, overwriteExistingFiles bool) error 
 	defer smbShareConnection.Disconnect()
 
 	// Fetch all files in the share
-	allFiles, err := smbShareConnection.FetchFiles(s.config.Folder, true)
+	allFiles, err := smbShareConnection.FetchFiles(s.config.Folder, validExtensions, true)
 	if err != nil {
 		return err
 	}

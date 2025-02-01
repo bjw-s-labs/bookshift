@@ -13,13 +13,13 @@ func (*RunCommand) Run(cfg *config.Config) error {
 		switch src.Type {
 		case "nfs":
 			nfsSyncer := nfs.NewNfsSyncer(src.Config.(config.NfsNetworkShareConfig))
-			if err := nfsSyncer.Run(cfg.TargetFolder, cfg.OverwriteExistingFiles); err != nil {
+			if err := nfsSyncer.Run(cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
 				return err
 			}
 
 		case "smb":
 			smbSyncer := smb.NewSmbSyncer(src.Config.(config.SmbNetworkShareConfig))
-			if err := smbSyncer.Run(cfg.TargetFolder, cfg.OverwriteExistingFiles); err != nil {
+			if err := smbSyncer.Run(cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
 				return err
 			}
 		}
