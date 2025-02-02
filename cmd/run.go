@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/bjw-s-labs/bookshift/pkg/config"
+	"github.com/bjw-s-labs/bookshift/pkg/syncer/imap"
 	"github.com/bjw-s-labs/bookshift/pkg/syncer/nfs"
 	"github.com/bjw-s-labs/bookshift/pkg/syncer/smb"
 )
@@ -22,7 +23,14 @@ func (*RunCommand) Run(cfg *config.Config) error {
 			if err := smbSyncer.Run(cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
 				return err
 			}
+
+		case "imap":
+			smbSyncer := imap.NewImapSyncer(src.Config.(config.ImapConfig))
+			if err := smbSyncer.Run(cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
+				return err
+			}
 		}
+
 	}
 	return nil
 }

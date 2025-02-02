@@ -42,6 +42,17 @@ func (src *Source) UnmarshalYAML(input []byte) error {
 		}
 		src.Type = config.Type
 		src.Config = config.Config
+
+	case "imap":
+		var config struct {
+			Type   string
+			Config ImapConfig
+		}
+		if err := util.UnmarshalYamlIntoStruct(string(input), &config); err != nil {
+			return err
+		}
+		src.Type = config.Type
+		src.Config = config.Config
 	}
 
 	return nil

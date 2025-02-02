@@ -27,7 +27,7 @@ type ImapConfig struct {
 	Port                      int              `yaml:"port"`
 	Username                  string           `yaml:"username"`
 	Password                  sensitive.String `yaml:"password"`
-	Folder                    string           `yaml:"folder" validate:"required"`
+	Mailbox                   string           `yaml:"mailbox" validate:"required"`
 	FilterField               string           `yaml:"filter_field" validate:"required,oneof=to subject"`
 	FilterValue               string           `yaml:"filter_value" validate:"required"`
 	ProcessReadEmails         bool             `yaml:"process_read_emails"`
