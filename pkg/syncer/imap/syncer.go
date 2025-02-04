@@ -2,7 +2,6 @@ package imap
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/bjw-s-labs/bookshift/pkg/config"
 )
@@ -36,32 +35,25 @@ func (s *ImapSyncer) Run(targetFolder string, validExtensions []string, overwrit
 	}
 	defer imapConnection.Disconnect()
 
-	allMessages, err := imapConnection.CollectMessages()
+	allMessages, err := imapConnection.CollectMessages(
+		!s.config.ProcessReadEmails,
+		s.config.FilterField,
+		s.config.FilterValue,
+	)
 	if err != nil {
 		return err
 	}
-	slog.Debug("Collected", "messages", allMessages)
 
-	// TODO: Implement the rest of the code here
-
-	// // Fetch all files in the share
-	// allFiles, err := smbShareConnection.FetchFiles(s.config.Folder, validExtensions, true)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// // Download all files
-	// for _, file := range allFiles {
-	// 	if err := file.Download(
-	// 		targetFolder,
-	// 		file.CleanFileName(),
-	// 		overwriteExistingFiles,
-	// 		s.config.KeepFolderStructure,
-	// 		s.config.RemoveFilesAfterDownload,
-	// 	); err != nil {
-	// 		return err
-	// 	}
-	// }
+	for _, message := range allMessages {
+		if err := message.DownloadAttachments(
+			targetFolder,
+			validExtensions,
+			overwriteExistingFiles,
+			s.config.RemoveEmailsAfterDownload,
+		); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

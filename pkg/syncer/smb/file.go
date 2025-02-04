@@ -37,10 +37,11 @@ func (f *SmbFile) CleanFileName() string {
 func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExistingFile bool, keepFolderStructure bool, deleteSourcFile bool) error {
 	// Create folder structure if required
 	if keepFolderStructure {
-		dstFolder = path.Join(dstFolder, f.subFolder, dstFileName)
+		dstFolder = path.Join(dstFolder, f.subFolder)
 	}
 
-	dstPath := path.Join(dstFolder, dstFileName)
+	safeFileName := util.SafeFileName(dstFileName)
+	dstPath := path.Join(dstFolder, safeFileName)
 
 	// Create folder structure if required
 	if _, err := os.Stat(dstFolder); os.IsNotExist(err) {
@@ -64,7 +65,7 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	}
 
 	// Download the file
-	tmpFile, err := os.CreateTemp("", "bsookshift-")
+	tmpFile, err := os.CreateTemp("", "bookshift-")
 	if err != nil {
 		os.Remove(tmpFile.Name())
 		return err
