@@ -34,7 +34,7 @@ func (f *SmbFile) CleanFileName() string {
 	return f.smbFile.Name
 }
 
-func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExistingFile bool, keepFolderStructure bool, deleteSourcFile bool) error {
+func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExistingFile bool, keepFolderStructure bool, deleteSourceFile bool) error {
 	// Create folder structure if required
 	if keepFolderStructure {
 		dstFolder = path.Join(dstFolder, f.subFolder)
@@ -84,7 +84,7 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	os.Rename(tmpFile.Name(), dstPath)
 
 	// Delete the source file if requested
-	if deleteSourcFile {
+	if deleteSourceFile {
 		if err := f.Delete(); err != nil {
 			return err
 		}
@@ -95,7 +95,7 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 
 func (f *SmbFile) Delete() error {
 	if err := f.smbShareConn.SmbConnection.Connection.DeleteFile(f.smbShareConn.Share, f.smbFile.FullPath); err != nil {
-		return fmt.Errorf("failed to delete the file (%s)", f.remotePath)
+		return fmt.Errorf("failed to delete the file (%s): %w", f.remotePath, err)
 	}
 	slog.Info("Deleted file from SMB share", "host", f.smbShareConn.SmbConnection.Host, "share", f.smbShareConn.Share, "file", f.remotePath)
 	return nil

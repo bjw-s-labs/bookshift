@@ -1,7 +1,7 @@
 package nfs
 
 import (
-	"log/slog"
+	"fmt"
 	"path"
 	"slices"
 	"strings"
@@ -42,11 +42,10 @@ func (s *NfsFolder) fetchAllFiles(rootFolder string, folder string, validExtensi
 
 	for _, file := range files {
 		fullPath := path.Join(folder, file.Name)
-		if file.IsDir {
+		if recurse && file.IsDir {
 			tmpFiles, err := s.fetchAllFiles(rootFolder, fullPath, validExtensions, recurse)
 			if err != nil {
-				slog.Warn("Failed to list files in directory", "directory", fullPath, "error", err)
-				continue
+				return nil, fmt.Errorf("failed to list files in directory %s: %w", fullPath, err)
 			}
 			allFiles = append(allFiles, tmpFiles...)
 		} else if !file.IsDir {
