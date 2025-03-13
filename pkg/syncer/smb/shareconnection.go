@@ -34,6 +34,7 @@ func (s *SmbShareConnection) Connect() error {
 }
 
 func (s *SmbShareConnection) Disconnect() error {
+	slog.Debug("Disconnecting SMB connection", "share", s.Share)
 	if err := s.SmbConnection.Connection.TreeDisconnect(s.Share); err != nil {
 		return err
 	}

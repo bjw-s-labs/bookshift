@@ -72,12 +72,17 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	}
 	defer tmpFile.Close()
 
+	slog.Debug("Downloading to temporary file", "file", tmpFile.Name())
 	writer := util.NewFileWriter(tmpFile, int64(f.nfsFile.Size), true)
 	_, err = f.nfsFolder.NfsClient.Client.ReadFileAll(f.remotePath, writer)
 	if err != nil {
 		return err
 	}
-	os.Rename(tmpFile.Name(), dstPath)
+
+	if err := os.Rename(tmpFile.Name(), dstPath); err != nil {
+		os.Remove(tmpFile.Name())
+		return err
+	}
 
 	// Delete the source file if requested
 	if deleteSourcFile {
@@ -86,6 +91,7 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 		}
 	}
 
+	slog.Info("Succesfully downloaded file", "filename", safeFileName)
 	return nil
 }
 

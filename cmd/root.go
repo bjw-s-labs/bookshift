@@ -31,6 +31,7 @@ type CLI struct {
 	ConfigFile string `short:"c" help:"Location of the configuration file." default:"${config_file}" type:"existingfile" env:"BOOKSHIFT_CONFIG_FILE"`
 
 	Run     RunCommand  `cmd:"" help:"Transfer books to your e-reader"`
+	Kobo    KoboCommand `cmd:"" help:"Manage BookShift on your Kobo e-reader"`
 	Version VersionFlag `       help:"Print version information and quit" short:"v" name:"version"`
 }
 

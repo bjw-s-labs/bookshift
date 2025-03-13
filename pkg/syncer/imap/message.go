@@ -103,11 +103,16 @@ loopMsgAttachmentParts:
 					return err
 				}
 
+				slog.Debug("Downloading to temporary file", "file", tmpFile.Name())
 				writer := util.NewFileWriter(tmpFile, int64(msgAttachmentPart.attachmentSize), true)
 				if _, err := writer.Write(decodedContent); err != nil {
 					return err
 				}
-				os.Rename(tmpFile.Name(), dstPath)
+
+				if err := os.Rename(tmpFile.Name(), dstPath); err != nil {
+					os.Remove(tmpFile.Name())
+					return err
+				}
 
 				slog.Info("Succesfully downloaded attachment", "filename", safeFileName)
 			}

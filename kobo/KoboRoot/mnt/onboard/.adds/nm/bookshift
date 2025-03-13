@@ -1,0 +1,1 @@
+menu_item:main:BookShift:cmd_spawn:quiet:exec usr/local/bookshift/launcher.sh

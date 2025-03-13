@@ -1,0 +1,2 @@
+KERNEL=="eth*", ACTION=="add", RUN+="/usr/local/bookshift/launcher.sh"
+KERNEL=="wlan*", ACTION=="add", RUN+="/usr/local/bookshift/launcher.sh"

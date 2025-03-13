@@ -65,14 +65,15 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	}
 
 	// Download the file
-	tmpFile, err := os.CreateTemp("", "bookshift-")
+	tmpFile, err := os.CreateTemp(dstFolder, "bookshift-")
 	if err != nil {
 		os.Remove(tmpFile.Name())
 		return err
 	}
 	defer tmpFile.Close()
 
-	writer := util.NewFileWriter(tmpFile, int64(f.smbFile.Size), true)
+	slog.Debug("Downloading to temporary file", "file", tmpFile.Name())
+	writer := util.NewFileWriter(tmpFile, int64(f.smbFile.Size), false)
 	if err := f.smbShareConn.SmbConnection.Connection.RetrieveFile(
 		f.smbShareConn.Share,
 		f.smbFile.FullPath,
@@ -81,7 +82,12 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	); err != nil {
 		return err
 	}
-	os.Rename(tmpFile.Name(), dstPath)
+
+	slog.Debug("Moving temporary file to destination", "source", tmpFile.Name(), "destination", dstPath)
+	if err := os.Rename(tmpFile.Name(), dstPath); err != nil {
+		os.Remove(tmpFile.Name())
+		return err
+	}
 
 	// Delete the source file if requested
 	if deleteSourceFile {
@@ -90,6 +96,7 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 		}
 	}
 
+	slog.Info("Succesfully downloaded file", "filename", safeFileName)
 	return nil
 }
 

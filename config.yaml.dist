@@ -1,5 +1,4 @@
 ---
 target_folder:
 valid_extensions: []
-nfs_shares: []
-smb_shares: []
+sources: []
