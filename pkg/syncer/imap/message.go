@@ -78,44 +78,42 @@ loopMsgAttachmentParts:
 		}
 
 		for _, section := range message.BodySection {
-			if section != nil {
-				// Check if the file already exists
-				_, err := os.Stat(dstPath)
-				if !os.IsNotExist(err) {
-					if !overwriteExistingFile {
-						slog.Warn("File already exists, skipping download", "file", dstPath)
-						break loopMsgAttachmentParts
-					}
-
-					slog.Info("Overwriting existing file", "file", dstPath)
+			// Check if the file already exists
+			_, err := os.Stat(dstPath)
+			if !os.IsNotExist(err) {
+				if !overwriteExistingFile {
+					slog.Warn("File already exists, skipping download", "file", dstPath)
+					break loopMsgAttachmentParts
 				}
 
-				// Download the file
-				tmpFile, err := os.CreateTemp("", "bookshift-")
-				if err != nil {
-					os.Remove(tmpFile.Name())
-					return err
-				}
-				defer tmpFile.Close()
-
-				decodedContent, err := base64.StdEncoding.DecodeString(string(section))
-				if err != nil {
-					return err
-				}
-
-				slog.Debug("Downloading to temporary file", "file", tmpFile.Name())
-				writer := util.NewFileWriter(tmpFile, int64(msgAttachmentPart.attachmentSize), true)
-				if _, err := writer.Write(decodedContent); err != nil {
-					return err
-				}
-
-				if err := os.Rename(tmpFile.Name(), dstPath); err != nil {
-					os.Remove(tmpFile.Name())
-					return err
-				}
-
-				slog.Info("Succesfully downloaded attachment", "filename", safeFileName)
+				slog.Info("Overwriting existing file", "file", dstPath)
 			}
+
+			// Download the file
+			tmpFile, err := os.CreateTemp("", "bookshift-")
+			if err != nil {
+				os.Remove(tmpFile.Name())
+				return err
+			}
+			defer tmpFile.Close()
+
+			decodedContent, err := base64.StdEncoding.DecodeString(string(section.Bytes))
+			if err != nil {
+				return err
+			}
+
+			slog.Debug("Downloading to temporary file", "file", tmpFile.Name())
+			writer := util.NewFileWriter(tmpFile, int64(msgAttachmentPart.attachmentSize), true)
+			if _, err := writer.Write(decodedContent); err != nil {
+				return err
+			}
+
+			if err := os.Rename(tmpFile.Name(), dstPath); err != nil {
+				os.Remove(tmpFile.Name())
+				return err
+			}
+
+			slog.Info("Succesfully downloaded attachment", "filename", safeFileName)
 		}
 	}
 
@@ -152,7 +150,7 @@ func (im *ImapMessage) determineAttachmentParts(msg *imapclient.FetchMessageBuff
 			if partObj.Disposition() != nil && partObj.Disposition().Params["filename"] != "" {
 				attachmentPart := part
 				attachmentFilename := partObj.Disposition().Params["filename"]
-				attachmentFileExtension := strings.Trim(path.Ext(attachmentFilename), ".")
+				attachmentFileExtension := path.Ext(attachmentFilename)
 
 				// Only continue if the file extension is wanted
 				if len(validExtensions) > 0 && !slices.Contains(validExtensions, attachmentFileExtension) {

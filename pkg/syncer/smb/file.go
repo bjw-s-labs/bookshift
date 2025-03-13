@@ -73,7 +73,7 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	defer tmpFile.Close()
 
 	slog.Debug("Downloading to temporary file", "file", tmpFile.Name())
-	writer := util.NewFileWriter(tmpFile, int64(f.smbFile.Size), false)
+	writer := util.NewFileWriter(tmpFile, int64(f.smbFile.Size), true)
 	if err := f.smbShareConn.SmbConnection.Connection.RetrieveFile(
 		f.smbShareConn.Share,
 		f.smbFile.FullPath,
