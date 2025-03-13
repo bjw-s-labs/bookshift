@@ -35,11 +35,11 @@ builds:
 archives:
   - id: bookshift
     name_template: "{{.ProjectName}}_{{.Os}}_{{.Arch}}"
-    builds:
+    ids:
       - bookshift
   - id: kobo
     name_template: "KoboRoot"
-    builds:
+    ids:
       - kobo
     formats:
       - tgz
