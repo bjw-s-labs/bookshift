@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/alecthomas/kong"
 	"github.com/bjw-s-labs/bookshift/pkg/config"
+	"github.com/lmittmann/tint"
 )
 
 const appName = "bookshift"
@@ -29,6 +31,7 @@ type CLI struct {
 	ConfigFile string `short:"c" help:"Location of the configuration file." default:"${config_file}" type:"existingfile" env:"BOOKSHIFT_CONFIG_FILE"`
 
 	Run     RunCommand  `cmd:"" help:"Transfer books to your e-reader"`
+	Kobo    KoboCommand `cmd:"" help:"Manage BookShift on your Kobo e-reader"`
 	Version VersionFlag `       help:"Print version information and quit" short:"v" name:"version"`
 }
 
@@ -36,6 +39,19 @@ func Execute() error {
 	if version == "" {
 		version = "development"
 	}
+
+	// Configure the default logger
+	logLevel := new(slog.LevelVar)
+	logLevel.Set(slog.LevelInfo)
+	logger := slog.New(
+		tint.NewHandler(
+			os.Stderr,
+			&tint.Options{
+				Level: logLevel,
+			},
+		),
+	)
+	slog.SetDefault(logger)
 
 	cli := CLI{
 		Version: VersionFlag(version),
@@ -59,16 +75,27 @@ func Execute() error {
 		},
 	)
 
-	var appConfig config.Config
+	// Create Configuration object and set defaults
+	appConfig := config.Config{
+		LogLevel: "info",
+	}
 
-	err := appConfig.Load(cli.ConfigFile)
-	if err != nil {
-		slog.Error(err.Error())
+	// Load the configuration from the config file
+	if err := appConfig.Load(cli.ConfigFile); err != nil {
+		errors := strings.Split(err.Error(), "\n")
+		for _, e := range errors {
+			slog.Error(e)
+		}
 		os.Exit(1)
 	}
 
-	err = ctx.Run(&appConfig)
-	if err != nil {
+	// Set the log level based on the configuration
+	logLevel.UnmarshalText([]byte(appConfig.LogLevel))
+
+	slog.Debug("Running", "config", appConfig)
+
+	// Run the application
+	if err := ctx.Run(&appConfig); err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}

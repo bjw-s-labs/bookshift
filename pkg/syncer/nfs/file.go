@@ -37,16 +37,16 @@ func (f *NfsFile) CleanFileName() string {
 func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExistingFile bool, keepFolderStructure bool, deleteSourcFile bool) error {
 	// Create folder structure if required
 	if keepFolderStructure {
-		dstFolder = path.Join(dstFolder, f.subFolder, dstFileName)
+		dstFolder = path.Join(dstFolder, f.subFolder)
 	}
 
-	dstPath := path.Join(dstFolder, dstFileName)
+	safeFileName := util.SafeFileName(dstFileName)
+	dstPath := path.Join(dstFolder, safeFileName)
 
 	// Create folder structure if required
 	if _, err := os.Stat(dstFolder); os.IsNotExist(err) {
 		slog.Info("Creating local folder", "folder", dstFolder)
-		err := os.MkdirAll(dstFolder, os.ModeDir|0755)
-		if err != nil {
+		if err := os.MkdirAll(dstFolder, os.ModeDir|0755); err != nil {
 			return err
 		}
 	}
@@ -65,34 +65,38 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	}
 
 	// Download the file
-	tmpFile, err := os.CreateTemp("", "bsookshift-")
+	tmpFile, err := os.CreateTemp("", "bookshift-")
 	if err != nil {
 		os.Remove(tmpFile.Name())
 		return err
 	}
 	defer tmpFile.Close()
 
+	slog.Debug("Downloading to temporary file", "file", tmpFile.Name())
 	writer := util.NewFileWriter(tmpFile, int64(f.nfsFile.Size), true)
 	_, err = f.nfsFolder.NfsClient.Client.ReadFileAll(f.remotePath, writer)
 	if err != nil {
 		return err
 	}
-	os.Rename(tmpFile.Name(), dstPath)
+
+	if err := os.Rename(tmpFile.Name(), dstPath); err != nil {
+		os.Remove(tmpFile.Name())
+		return err
+	}
 
 	// Delete the source file if requested
 	if deleteSourcFile {
-		err = f.Delete()
-		if err != nil {
+		if err := f.Delete(); err != nil {
 			return err
 		}
 	}
 
+	slog.Info("Succesfully downloaded file", "filename", safeFileName)
 	return nil
 }
 
 func (f *NfsFile) Delete() error {
-	err := f.nfsFolder.NfsClient.Client.DeleteFile(f.remotePath)
-	if err != nil {
+	if err := f.nfsFolder.NfsClient.Client.DeleteFile(f.remotePath); err != nil {
 		return fmt.Errorf("failed to delete the file %s: (%w)", f.remotePath, err)
 	}
 	slog.Info("Deleted file from NFS share", "host", f.nfsFolder.NfsClient.Host, "file", f.remotePath)

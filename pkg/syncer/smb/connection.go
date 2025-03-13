@@ -1,6 +1,8 @@
 package smb
 
 import (
+	"time"
+
 	"github.com/go-playground/sensitive"
 	"github.com/jfjallid/go-smb/smb"
 	"github.com/jfjallid/go-smb/spnego"
@@ -18,8 +20,9 @@ type SmbConnection struct {
 
 func (s *SmbConnection) Connect() error {
 	options := smb.Options{
-		Host: s.Host,
-		Port: s.Port,
+		Host:        s.Host,
+		Port:        s.Port,
+		DialTimeout: time.Duration(10) * time.Second,
 		Initiator: &spnego.NTLMInitiator{
 			User:     s.Username,
 			Password: string(s.Password),

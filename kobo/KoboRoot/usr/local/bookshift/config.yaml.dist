@@ -1,0 +1,6 @@
+---
+target_folder: /mnt/onboard/KoboMailLibrary
+valid_extensions:
+  - .epub
+  - .kepub
+sources: []

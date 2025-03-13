@@ -1,8 +1,9 @@
 package nfs
 
 import (
-	"log/slog"
+	"fmt"
 	"path"
+	"slices"
 	"strings"
 )
 
@@ -18,8 +19,8 @@ func NewNfsFolder(folder string, conn *NfsClient) *NfsFolder {
 	}
 }
 
-func (s *NfsFolder) FetchFiles(folder string, recurse bool) ([]NfsFile, error) {
-	allFiles, err := s.fetchAllFiles(folder, "", recurse)
+func (s *NfsFolder) FetchFiles(folder string, validExtensions []string, recurse bool) ([]NfsFile, error) {
+	allFiles, err := s.fetchAllFiles(folder, "", validExtensions, recurse)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +28,7 @@ func (s *NfsFolder) FetchFiles(folder string, recurse bool) ([]NfsFile, error) {
 	return allFiles, nil
 }
 
-func (s *NfsFolder) fetchAllFiles(rootFolder string, folder string, recurse bool) ([]NfsFile, error) {
+func (s *NfsFolder) fetchAllFiles(rootFolder string, folder string, validExtensions []string, recurse bool) ([]NfsFile, error) {
 	var allFiles []NfsFile
 
 	if folder == "" {
@@ -39,18 +40,20 @@ func (s *NfsFolder) fetchAllFiles(rootFolder string, folder string, recurse bool
 		return nil, err
 	}
 
-	slog.Debug("result", "files", files)
-
 	for _, file := range files {
 		fullPath := path.Join(folder, file.Name)
-		if file.IsDir {
-			tmpFiles, err := s.fetchAllFiles(rootFolder, fullPath, recurse)
+		if recurse && file.IsDir {
+			tmpFiles, err := s.fetchAllFiles(rootFolder, fullPath, validExtensions, recurse)
 			if err != nil {
-				slog.Warn("Failed to list files in directory", "directory", fullPath, "error", err)
-				continue
+				return nil, fmt.Errorf("failed to list files in directory %s: %w", fullPath, err)
 			}
 			allFiles = append(allFiles, tmpFiles...)
 		} else if !file.IsDir {
+			extension := path.Ext(fullPath)
+			if len(validExtensions) > 0 && !slices.Contains(validExtensions, extension) {
+				continue
+			}
+
 			parentFolder := path.Dir(fullPath)
 			_, subFolder, _ := strings.Cut(parentFolder, rootFolder)
 

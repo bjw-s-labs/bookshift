@@ -44,9 +44,8 @@ archives:
     formats:
       - tgz
     files:
-      - KoboRoot/*
-      - src: config.yaml.dist
-        dst: usr/local/bookshift/config.yaml.dist
+      - src: kobo/*
+        dst: /
 
 checksum:
   name_template: "checksums.txt"
