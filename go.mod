@@ -9,7 +9,7 @@ require (
 	github.com/go-playground/validator/v10 v10.24.0
 	github.com/goccy/go-yaml v1.15.23
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/jfjallid/go-smb v0.5.7
+	github.com/jfjallid/go-smb v0.5.9
 	github.com/kha7iq/go-nfs-client v1.0.0
 	github.com/lmittmann/tint v1.0.7
 	github.com/schollz/progressbar/v3 v3.18.0
