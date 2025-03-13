@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/kong v1.6.1
 	github.com/emersion/go-imap/v2 v2.0.0-beta.5
 	github.com/go-playground/sensitive v0.0.1
-	github.com/go-playground/validator/v10 v10.24.0
+	github.com/go-playground/validator/v10 v10.25.0
 	github.com/goccy/go-yaml v1.15.23
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/jfjallid/go-smb v0.5.9
