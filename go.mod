@@ -11,7 +11,7 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/jfjallid/go-smb v0.6.2
 	github.com/kha7iq/go-nfs-client v1.0.0
-	github.com/lmittmann/tint v1.0.7
+	github.com/lmittmann/tint v1.1.0
 	github.com/schollz/progressbar/v3 v3.18.0
 )
 
