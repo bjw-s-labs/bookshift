@@ -10,7 +10,7 @@ before:
     - go mod tidy
 
 builds:
-  - id: bookshift
+  - id: linux
     env:
       - CGO_ENABLED=0
     goarch:
@@ -18,6 +18,15 @@ builds:
       - arm64
     goos:
       - linux
+    ldflags:
+      - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
+  - id: darwin
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+      - arm64
+    goos:
       - darwin
     ldflags:
       - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
@@ -30,13 +39,24 @@ builds:
       - linux
     ldflags:
       - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
-    binary: usr/local/bookshift/bookshift
+    binary: KoboRoot/usr/local/bookshift/bookshift
+  - id: pocketbook
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - arm
+    goos:
+      - linux
+    ldflags:
+      - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
+    binary: bookshift/bookshift
 
 archives:
   - id: bookshift
     name_template: "{{.ProjectName}}_{{.Os}}_{{.Arch}}"
     ids:
-      - bookshift
+      - linux
+      - darwin
   - id: kobo
     name_template: "KoboRoot"
     ids:
@@ -46,6 +66,19 @@ archives:
     files:
       - src: kobo/*
         dst: /
+      - src: config.yaml.dist
+        dst: /KoboRoot/usr/local/bookshift/config.yaml.dist
+  - id: pocketbook
+    name_template: "pocketbook"
+    ids:
+      - pocketbook
+    formats:
+      - tgz
+    files:
+      - src: pocketbook/*
+        dst: /
+      - src: config.yaml.dist
+        dst: bookshift/config.yaml.dist
 
 checksum:
   name_template: "checksums.txt"

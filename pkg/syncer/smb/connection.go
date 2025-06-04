@@ -12,10 +12,10 @@ type SmbConnection struct {
 	Host     string
 	Port     int
 	Username string
-	Password sensitive.String
+	Password *sensitive.String
 	Domain   string
 
-	Connection *smb.Connection
+	connection *smb.Connection
 }
 
 func (s *SmbConnection) Connect() error {
@@ -25,7 +25,7 @@ func (s *SmbConnection) Connect() error {
 		DialTimeout: time.Duration(10) * time.Second,
 		Initiator: &spnego.NTLMInitiator{
 			User:     s.Username,
-			Password: string(s.Password),
+			Password: string(*s.Password),
 			Domain:   s.Domain,
 		},
 	}
@@ -34,11 +34,34 @@ func (s *SmbConnection) Connect() error {
 		return err
 	}
 
-	s.Connection = conn
+	if conn == nil {
+		return ErrSmbDisconnected
+	}
+
+	s.connection = conn
 	return nil
 }
 
 func (s *SmbConnection) Disconnect() error {
-	s.Connection.Close()
+	if s.connection == nil {
+		return ErrSmbDisconnected
+	}
+
+	s.connection.Close()
+	s.connection = nil
 	return nil
+}
+
+func (s *SmbConnection) RetrieveFile(share string, filepath string, offset uint64, callback func([]byte) (int, error)) error {
+	if s.connection == nil {
+		return ErrSmbDisconnected
+	}
+	return s.connection.RetrieveFile(share, filepath, offset, callback)
+}
+
+func (s *SmbConnection) DeleteFile(share string, filepath string) error {
+	if s.connection == nil {
+		return ErrSmbDisconnected
+	}
+	return s.connection.DeleteFile(share, filepath)
 }

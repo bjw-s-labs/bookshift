@@ -10,14 +10,14 @@ type SmbSyncer struct {
 	config *config.SmbNetworkShareConfig
 }
 
-func NewSmbSyncer(shareConfig config.SmbNetworkShareConfig) *SmbSyncer {
+func NewSmbSyncer(shareConfig *config.SmbNetworkShareConfig) *SmbSyncer {
 	// Set default port
 	if !(shareConfig.Port > 0) {
 		shareConfig.Port = 445
 	}
 
 	return &SmbSyncer{
-		config: &shareConfig,
+		config: shareConfig,
 	}
 }
 

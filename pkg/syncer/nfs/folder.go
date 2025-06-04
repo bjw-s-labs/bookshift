@@ -8,14 +8,15 @@ import (
 )
 
 type NfsFolder struct {
-	Folder    string
-	NfsClient *NfsClient
+	Folder string
+
+	nfsClient *NfsClient
 }
 
 func NewNfsFolder(folder string, conn *NfsClient) *NfsFolder {
 	return &NfsFolder{
 		Folder:    folder,
-		NfsClient: conn,
+		nfsClient: conn,
 	}
 }
 
@@ -35,7 +36,7 @@ func (s *NfsFolder) fetchAllFiles(rootFolder string, folder string, validExtensi
 		folder = rootFolder
 	}
 
-	files, err := s.NfsClient.Client.GetFileList(folder)
+	files, err := s.nfsClient.GetFileList(folder)
 	if err != nil {
 		return nil, err
 	}

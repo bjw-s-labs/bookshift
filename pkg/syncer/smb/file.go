@@ -46,7 +46,7 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	// Create folder structure if required
 	if _, err := os.Stat(dstFolder); os.IsNotExist(err) {
 		slog.Info("Creating local folder", "folder", dstFolder)
-		if err := os.MkdirAll(dstFolder, os.ModeDir|0755); err != nil {
+		if err := os.MkdirAll(dstFolder, 0755); err != nil {
 			return err
 		}
 	}
@@ -74,7 +74,7 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 
 	slog.Debug("Downloading to temporary file", "file", tmpFile.Name())
 	writer := util.NewFileWriter(tmpFile, int64(f.smbFile.Size), true)
-	if err := f.smbShareConn.SmbConnection.Connection.RetrieveFile(
+	if err := f.smbShareConn.SmbConnection.RetrieveFile(
 		f.smbShareConn.Share,
 		f.smbFile.FullPath,
 		0,
@@ -83,7 +83,6 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 		return err
 	}
 
-	slog.Debug("Moving temporary file to destination", "source", tmpFile.Name(), "destination", dstPath)
 	if err := os.Rename(tmpFile.Name(), dstPath); err != nil {
 		os.Remove(tmpFile.Name())
 		return err
@@ -101,7 +100,7 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 }
 
 func (f *SmbFile) Delete() error {
-	if err := f.smbShareConn.SmbConnection.Connection.DeleteFile(f.smbShareConn.Share, f.smbFile.FullPath); err != nil {
+	if err := f.smbShareConn.SmbConnection.DeleteFile(f.smbShareConn.Share, f.smbFile.FullPath); err != nil {
 		return fmt.Errorf("failed to delete the file (%s): %w", f.remotePath, err)
 	}
 	slog.Info("Deleted file from SMB share", "host", f.smbShareConn.SmbConnection.Host, "share", f.smbShareConn.Share, "file", f.remotePath)

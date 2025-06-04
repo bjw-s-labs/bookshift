@@ -10,14 +10,14 @@ type ImapSyncer struct {
 	config *config.ImapConfig
 }
 
-func NewImapSyncer(shareConfig config.ImapConfig) *ImapSyncer {
-	// Set default port
+func NewImapSyncer(shareConfig *config.ImapConfig) *ImapSyncer {
+	// Set default port if nothing is specified
 	if !(shareConfig.Port > 0) {
 		shareConfig.Port = 143
 	}
 
 	return &ImapSyncer{
-		config: &shareConfig,
+		config: shareConfig,
 	}
 }
 
@@ -29,12 +29,12 @@ func (s *ImapSyncer) Run(targetFolder string, validExtensions []string, overwrit
 		Username: s.config.Username,
 		Password: s.config.Password,
 	}
-
 	if err := imapConnection.Connect(s.config.Mailbox); err != nil {
 		return fmt.Errorf("could not connect to IMAP server %s. %w", s.config.Host, err)
 	}
 	defer imapConnection.Disconnect()
 
+	// Collect messages from the IMAP server
 	allMessages, err := imapConnection.CollectMessages(
 		!s.config.ProcessReadEmails,
 		s.config.FilterField,
@@ -44,6 +44,7 @@ func (s *ImapSyncer) Run(targetFolder string, validExtensions []string, overwrit
 		return err
 	}
 
+	// Download attachments for each message
 	for _, message := range allMessages {
 		if err := message.DownloadAttachments(
 			targetFolder,
