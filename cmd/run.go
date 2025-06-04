@@ -13,7 +13,7 @@ import (
 
 type RunCommand struct{}
 
-func (*RunCommand) Run(cfg *config.Config) error {
+func (*RunCommand) Run(cfg *config.Config, logger *slog.Logger) error {
 	numberOfFilesAtStart, err := util.CountFilesInFolder(cfg.TargetFolder, cfg.ValidExtensions, true)
 	if err != nil {
 		return err
@@ -22,21 +22,24 @@ func (*RunCommand) Run(cfg *config.Config) error {
 	for _, src := range cfg.Sources {
 		switch src.Type {
 		case "nfs":
-			nfsSyncer := nfs.NewNfsSyncer(src.Config.(config.NfsNetworkShareConfig))
+			nfsSyncer := nfs.NewNfsSyncer(src.Config.(*config.NfsNetworkShareConfig))
 			if err := nfsSyncer.Run(cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
-				return err
+				logger.Error("failed to sync from NFS share", "error", err)
+				continue
 			}
 
 		case "smb":
-			smbSyncer := smb.NewSmbSyncer(src.Config.(config.SmbNetworkShareConfig))
+			smbSyncer := smb.NewSmbSyncer(src.Config.(*config.SmbNetworkShareConfig))
 			if err := smbSyncer.Run(cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
-				return err
+				logger.Error("failed to sync from SMB share", "error", err)
+				continue
 			}
 
 		case "imap":
-			smbSyncer := imap.NewImapSyncer(src.Config.(config.ImapConfig))
-			if err := smbSyncer.Run(cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
-				return err
+			imapSyncer := imap.NewImapSyncer(src.Config.(*config.ImapConfig))
+			if err := imapSyncer.Run(cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
+				logger.Error("failed to sync from IMAP server", "error", err)
+				continue
 			}
 		}
 	}

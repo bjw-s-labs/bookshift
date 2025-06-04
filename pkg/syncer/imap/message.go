@@ -25,16 +25,16 @@ type messageAttachmentPart struct {
 	attachmentSize uint32
 }
 
-func NewImapMessage(ic *ImapClient) *ImapMessage {
+func NewImapMessage(uid imap.UID, ic *ImapClient) *ImapMessage {
 	return &ImapMessage{
-		// ImapMessage: msg,
+		uid:        uid,
 		imapClient: ic,
 	}
 }
 
 func (im *ImapMessage) DownloadAttachments(dstFolder string, validExtensions []string, overwriteExistingFile bool, removeMessageAfterDownload bool) error {
 	// Fetch basic message information from the server
-	message, err := im.fetchByUID(im.uid, &imap.FetchOptions{
+	message, err := im.imapClient.fetchByUID(im.uid, &imap.FetchOptions{
 		Envelope:      true,
 		BodyStructure: &imap.FetchItemBodyStructure{Extended: true},
 	})
@@ -57,7 +57,7 @@ func (im *ImapMessage) DownloadAttachments(dstFolder string, validExtensions []s
 	// Create target folder if required
 	if _, err := os.Stat(dstFolder); os.IsNotExist(err) {
 		slog.Info("Creating local folder", "folder", dstFolder)
-		if err := os.MkdirAll(dstFolder, os.ModeDir|0755); err != nil {
+		if err := os.MkdirAll(dstFolder, 0755); err != nil {
 			return err
 		}
 	}
@@ -70,7 +70,7 @@ loopMsgAttachmentParts:
 
 		slog.Info("Downloading email attachment", "host", im.imapClient.Host, "sender", messageSender, "subject", messageSubject, "filename", msgAttachmentPart.filename)
 
-		message, err := im.fetchByUID(im.uid, &imap.FetchOptions{
+		message, err := im.imapClient.fetchByUID(im.uid, &imap.FetchOptions{
 			BodySection: []*imap.FetchItemBodySection{{Part: msgAttachmentPart.part}},
 		})
 		if err != nil {
@@ -90,7 +90,7 @@ loopMsgAttachmentParts:
 			}
 
 			// Download the file
-			tmpFile, err := os.CreateTemp("", "bookshift-")
+			tmpFile, err := os.CreateTemp(dstFolder, "bookshift-")
 			if err != nil {
 				os.Remove(tmpFile.Name())
 				return err
@@ -122,19 +122,6 @@ loopMsgAttachmentParts:
 	}
 
 	return nil
-}
-
-func (im *ImapMessage) fetchByUID(uid imap.UID, options *imap.FetchOptions) (*imapclient.FetchMessageBuffer, error) {
-	messages, err := im.imapClient.Client.Fetch(imap.UIDSetNum(uid), options).Collect()
-	if err != nil {
-		return nil, err
-	}
-
-	if len(messages) != 1 {
-		return nil, fmt.Errorf("len(messages) = %v, want 1", len(messages))
-	}
-
-	return messages[0], nil
 }
 
 func (im *ImapMessage) determineAttachmentParts(msg *imapclient.FetchMessageBuffer, validExtensions []string) ([]*messageAttachmentPart, error) {

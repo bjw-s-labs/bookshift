@@ -1,59 +1,50 @@
 package config
 
 import (
-	"github.com/bjw-s-labs/bookshift/pkg/util"
+	"fmt"
+
 	"github.com/goccy/go-yaml"
 )
 
 type Source struct {
-	Type   string      `yaml:"type" validate:"oneof=smb nfs"`
-	Config interface{} `yaml:"config" validate:"required"`
+	Type   string       `yaml:"type" validate:"oneof=smb nfs imap"`
+	Config SourceConfig `yaml:"config" validate:"required"`
 }
 
+// UnmarshalYAML implements custom YAML unmarshalling for Source,
+// selecting the correct config struct based on the "type" field.
 func (src *Source) UnmarshalYAML(input []byte) error {
-	var tmpSource struct {
-		Type   string
-		Config interface{}
-	}
-	if err := yaml.Unmarshal(input, &tmpSource); err != nil {
+	var raw map[string]interface{}
+	if err := yaml.Unmarshal(input, &raw); err != nil {
 		return err
 	}
 
-	switch tmpSource.Type {
-	case "nfs":
-		var config struct {
-			Type   string
-			Config NfsNetworkShareConfig
-		}
-
-		if err := util.UnmarshalYamlIntoStruct(string(input), &config); err != nil {
-			return err
-		}
-		src.Type = config.Type
-		src.Config = config.Config
-
-	case "smb":
-		var config struct {
-			Type   string
-			Config SmbNetworkShareConfig
-		}
-		if err := util.UnmarshalYamlIntoStruct(string(input), &config); err != nil {
-			return err
-		}
-		src.Type = config.Type
-		src.Config = config.Config
-
-	case "imap":
-		var config struct {
-			Type   string
-			Config ImapConfig
-		}
-		if err := util.UnmarshalYamlIntoStruct(string(input), &config); err != nil {
-			return err
-		}
-		src.Type = config.Type
-		src.Config = config.Config
+	typeVal, ok := raw["type"].(string)
+	if !ok {
+		return fmt.Errorf("missing or invalid 'type' field in source config")
 	}
 
+	var configPtr interface{}
+	switch typeVal {
+	case "nfs":
+		configPtr = &NfsNetworkShareConfig{}
+	case "smb":
+		configPtr = &SmbNetworkShareConfig{}
+	case "imap":
+		configPtr = &ImapConfig{}
+	default:
+		return fmt.Errorf("unsupported source type: %s", typeVal)
+	}
+
+	configRaw, err := yaml.Marshal(raw["config"])
+	if err != nil {
+		return err
+	}
+	if err := yaml.Unmarshal(configRaw, configPtr); err != nil {
+		return err
+	}
+
+	src.Type = typeVal
+	src.Config = configPtr
 	return nil
 }

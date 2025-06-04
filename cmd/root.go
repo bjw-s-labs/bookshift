@@ -92,10 +92,10 @@ func Execute() error {
 	// Set the log level based on the configuration
 	logLevel.UnmarshalText([]byte(appConfig.LogLevel))
 
-	slog.Debug("Running", "config", appConfig)
+	slog.Debug("Running")
 
 	// Run the application
-	if err := ctx.Run(&appConfig); err != nil {
+	if err := ctx.Run(&appConfig, logger); err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
