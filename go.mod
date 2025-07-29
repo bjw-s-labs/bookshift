@@ -11,7 +11,7 @@ require (
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/goccy/go-yaml v1.18.0
 	github.com/godbus/dbus/v5 v5.1.0
-	github.com/jfjallid/go-smb v0.6.3
+	github.com/jfjallid/go-smb v0.6.5
 	github.com/kha7iq/go-nfs-client v1.0.0
 	github.com/lmittmann/tint v1.1.2
 	github.com/schollz/progressbar/v3 v3.18.0
@@ -26,8 +26,8 @@ require (
 	github.com/jfjallid/gofork v1.7.6 // indirect
 	github.com/jfjallid/gokrb5/v8 v8.5.1 // indirect
 	github.com/jfjallid/golog v0.3.3 // indirect
-	github.com/jfjallid/mstypes v0.0.0-20250515143745-921e33065feb // indirect
-	github.com/jfjallid/ndr v0.0.0-20250515143046-14ad19ef61a6 // indirect
+	github.com/jfjallid/mstypes v0.0.1 // indirect
+	github.com/jfjallid/ndr v0.0.1 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
