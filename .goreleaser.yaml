@@ -8,6 +8,8 @@ project_name: bookshift
 before:
   hooks:
     - go mod tidy
+    - go generate ./...
+    - go test ./...
 
 builds:
   - id: linux
