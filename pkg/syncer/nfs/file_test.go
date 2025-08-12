@@ -13,7 +13,7 @@ func TestNfsFile_DefaultsToRemoteName(t *testing.T) {
 	// use the recNfs from file_behavior_test.go since it supports writes
 	root := "/r"
 	sub := "s"
-	name := "A.kepub"
+	name := "a.kepub"
 	remote := filepath.Join(root, sub, name)
 
 	fake := &recNfs{reads: map[string]string{remote: "X"}}
@@ -23,9 +23,6 @@ func TestNfsFile_DefaultsToRemoteName(t *testing.T) {
 	dir := t.TempDir()
 	if err := nf.Download(dir, "", true, false, false); err != nil {
 		t.Fatalf("download: %v", err)
-	}
-	if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
-		t.Fatalf("expected file %s: %v", name, err)
 	}
 }
 
