@@ -3,6 +3,7 @@ package nfs
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"time"
@@ -10,11 +11,36 @@ import (
 	"github.com/kha7iq/go-nfs-client/nfs4"
 )
 
+// NfsAPI is the minimal contract used by folder and file logic.
+// It enables injecting a fake in tests.
+type NfsAPI interface {
+	Connect(timeout time.Duration) error
+	Disconnect() error
+	GetFileList(path string) ([]nfs4.FileInfo, error)
+	ReadFileAll(path string, w io.Writer) (int, error)
+	DeleteFile(path string) error
+	Host() string
+	Port() int
+}
+
 type NfsClient struct {
 	host string
 	port int
 
-	client *nfs4.NfsClient
+	client nfsLowLevel
+}
+
+// nfsLowLevel captures the minimal calls used from the underlying nfs4 client.
+type nfsLowLevel interface {
+	Close()
+	GetFileList(path string) ([]nfs4.FileInfo, error)
+	ReadFileAll(path string, w io.Writer) (uint64, error)
+	DeleteFile(path string) error
+}
+
+// dial hook for low-level client (overridable in tests)
+var nfsDialLow = func(ctx context.Context, server string, auth nfs4.AuthParams) (nfsLowLevel, error) {
+	return nfs4.NewNfsClient(ctx, server, auth)
 }
 
 func NewNfsClient(host string, port int) *NfsClient {
@@ -38,7 +64,7 @@ func (c *NfsClient) Connect(timeout time.Duration) error {
 	hostname, _ := os.Hostname()
 
 	// Create a new NFS client instance, passing in the context, server address, and authentication parameters.
-	client, err := nfs4.NewNfsClient(ctx, server, nfs4.AuthParams{
+	client, err := nfsDialLow(ctx, server, nfs4.AuthParams{
 		MachineName: hostname,
 	})
 	if err != nil {
@@ -69,6 +95,26 @@ func (c *NfsClient) GetFileList(path string) ([]nfs4.FileInfo, error) {
 		return c.client.GetFileList(path)
 	}
 	return nil, fmt.Errorf("client is not connected")
+}
+
+// ReadFileAll streams a remote file to the provided writer.
+func (c *NfsClient) ReadFileAll(path string, w io.Writer) (int, error) {
+	if c.client == nil {
+		return 0, fmt.Errorf("client is not connected")
+	}
+	n, err := c.client.ReadFileAll(path, w)
+	if n > ^uint64(0)>>1 { // cap to max int on platform
+		return int(^uint64(0) >> 1), err
+	}
+	return int(n), err
+}
+
+// DeleteFile removes a remote file.
+func (c *NfsClient) DeleteFile(path string) error {
+	if c.client == nil {
+		return fmt.Errorf("client is not connected")
+	}
+	return c.client.DeleteFile(path)
 }
 
 func (c *NfsClient) Host() string {

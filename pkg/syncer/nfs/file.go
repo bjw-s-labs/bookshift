@@ -30,16 +30,16 @@ func NewNfsFile(rootFolder string, subFolder string, file *nfs4.FileInfo, nfsFol
 	}
 }
 
-func (f *NfsFile) CleanFileName() string {
-	return f.nfsFile.Name
-}
-
-func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExistingFile bool, keepFolderStructure bool, deleteSourcFile bool) error {
+func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExistingFile bool, keepFolderStructure bool, deleteSourceFile bool) error {
 	// Create folder structure if required
 	if keepFolderStructure {
 		dstFolder = path.Join(dstFolder, f.subFolder)
 	}
 
+	// If no destination filename is provided, use the remote file name by default
+	if dstFileName == "" {
+		dstFileName = f.nfsFile.Name
+	}
 	safeFileName := util.SafeFileName(dstFileName)
 	dstPath := path.Join(dstFolder, safeFileName)
 
@@ -51,7 +51,7 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 		}
 	}
 
-	slog.Info("Downloading file from NFS share", "host", f.nfsFolder.nfsClient.Host, "file", f.remotePath, "destination", dstPath)
+	slog.Info("Downloading file from NFS share", "host", f.nfsFolder.nfsClient.Host(), "file", f.remotePath, "destination", dstPath)
 
 	// Check if the file already exists
 	_, err := os.Stat(dstPath)
@@ -67,14 +67,12 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	// Download the file
 	tmpFile, err := os.CreateTemp(dstFolder, "bookshift-")
 	if err != nil {
-		os.Remove(tmpFile.Name())
 		return err
 	}
 	defer tmpFile.Close()
 
-	slog.Debug("Downloading to temporary file", "file", tmpFile.Name())
 	writer := util.NewFileWriter(tmpFile, int64(f.nfsFile.Size), true)
-	_, err = f.nfsFolder.nfsClient.client.ReadFileAll(f.remotePath, writer)
+	_, err = f.nfsFolder.nfsClient.ReadFileAll(f.remotePath, writer)
 	if err != nil {
 		return err
 	}
@@ -85,7 +83,7 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	}
 
 	// Delete the source file if requested
-	if deleteSourcFile {
+	if deleteSourceFile {
 		if err := f.Delete(); err != nil {
 			return err
 		}
@@ -96,9 +94,9 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 }
 
 func (f *NfsFile) Delete() error {
-	if err := f.nfsFolder.nfsClient.client.DeleteFile(f.remotePath); err != nil {
+	if err := f.nfsFolder.nfsClient.DeleteFile(f.remotePath); err != nil {
 		return fmt.Errorf("failed to delete the file %s: (%w)", f.remotePath, err)
 	}
-	slog.Info("Deleted file from NFS share", "host", f.nfsFolder.nfsClient.Host, "file", f.remotePath)
+	slog.Info("Deleted file from NFS share", "host", f.nfsFolder.nfsClient.Host(), "file", f.remotePath)
 	return nil
 }

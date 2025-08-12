@@ -12,14 +12,7 @@ const (
 )
 
 func getSystemDbusConnection() (*dbus.Conn, error) {
-	var err error
-	var ndbConn *dbus.Conn
-
-	ndbConn, err = dbus.SystemBus()
-	if err != nil {
-		return nil, err
-	}
-	return ndbConn, nil
+	return systemBus()
 }
 
 func getNdbObject(conn *dbus.Conn) (dbus.BusObject, error) {
@@ -30,7 +23,7 @@ func getNdbObject(conn *dbus.Conn) (dbus.BusObject, error) {
 			return nil, err
 		}
 	}
-	return conn.Object(ndbInterface, ndbObjectPath), nil
+	return objectFor(conn), nil
 }
 
 // IsInstalled returns if NickelDbus is installed
@@ -43,7 +36,7 @@ func IsInstalled() bool {
 		return false
 	}
 
-	_, err = introspect.Call(ndbObj)
+	err = introspectCall(ndbObj)
 	installed := err == nil
 
 	return installed
@@ -52,18 +45,28 @@ func IsInstalled() bool {
 // GetVersion returns the current NickelDbus version
 func GetVersion() (string, error) {
 	var err error
-	var ndbVersion string
 	var ndbObj dbus.BusObject
 
 	ndbObj, err = getNdbObject(nil)
 	if err != nil {
 		return "", err
 	}
-
-	err = ndbObj.Call(ndbInterface+".ndbVersion", 0).Store(&ndbVersion)
-	if err != nil {
-		return "", err
-	}
-
-	return ndbVersion, nil
+	return versionCall(ndbObj)
 }
+
+// Injectable wrappers for testability
+var (
+	systemBus      = dbus.SystemBus
+	objectFor      = func(conn *dbus.Conn) dbus.BusObject { return conn.Object(ndbInterface, ndbObjectPath) }
+	introspectCall = func(obj dbus.BusObject) error {
+		_, err := introspect.Call(obj)
+		return err
+	}
+	versionCall = func(obj dbus.BusObject) (string, error) {
+		var v string
+		if err := obj.Call(ndbInterface+".ndbVersion", 0).Store(&v); err != nil {
+			return "", err
+		}
+		return v, nil
+	}
+)

@@ -30,16 +30,16 @@ func NewSmbFile(rootFolder string, subFolder string, file *smb.SharedFile, share
 	}
 }
 
-func (f *SmbFile) CleanFileName() string {
-	return f.smbFile.Name
-}
-
 func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExistingFile bool, keepFolderStructure bool, deleteSourceFile bool) error {
 	// Create folder structure if required
 	if keepFolderStructure {
 		dstFolder = path.Join(dstFolder, f.subFolder)
 	}
 
+	// Default to the remote filename when none is provided
+	if dstFileName == "" {
+		dstFileName = f.smbFile.Name
+	}
 	safeFileName := util.SafeFileName(dstFileName)
 	dstPath := path.Join(dstFolder, safeFileName)
 
@@ -51,7 +51,8 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 		}
 	}
 
-	slog.Info("Downloading file from SMB share", "host", f.smbShareConn.SmbConnection.Host, "share", f.smbShareConn.Share, "file", f.remotePath, "destination", dstPath)
+	// Best-effort host info not available via interface; omit host here
+	slog.Info("Downloading file from SMB share", "share", f.smbShareConn.Share, "file", f.remotePath, "destination", dstPath)
 
 	// Check if the file already exists
 	_, err := os.Stat(dstPath)
@@ -67,7 +68,6 @@ func (f *SmbFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	// Download the file
 	tmpFile, err := os.CreateTemp(dstFolder, "bookshift-")
 	if err != nil {
-		os.Remove(tmpFile.Name())
 		return err
 	}
 	defer tmpFile.Close()
@@ -103,6 +103,6 @@ func (f *SmbFile) Delete() error {
 	if err := f.smbShareConn.SmbConnection.DeleteFile(f.smbShareConn.Share, f.smbFile.FullPath); err != nil {
 		return fmt.Errorf("failed to delete the file (%s): %w", f.remotePath, err)
 	}
-	slog.Info("Deleted file from SMB share", "host", f.smbShareConn.SmbConnection.Host, "share", f.smbShareConn.Share, "file", f.remotePath)
+	slog.Info("Deleted file from SMB share", "share", f.smbShareConn.Share, "file", f.remotePath)
 	return nil
 }

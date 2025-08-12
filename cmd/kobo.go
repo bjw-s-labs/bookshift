@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/bjw-s-labs/bookshift/pkg/config"
-	"github.com/bjw-s-labs/bookshift/pkg/kobo"
 )
 
 type KoboCommand struct {
@@ -33,5 +32,5 @@ func (*KoboUninstallCommand) Run(cfg *config.Config) error {
 }
 
 func (*KoboUpdateLibraryCommand) Run(cfg *config.Config) error {
-	return kobo.UpdateLibrary()
+	return updateKoboLibrary()
 }

@@ -14,14 +14,10 @@ func LibraryRescan(timeoutSeconds int, fullScan bool) error {
 	ndbConn, _ := getSystemDbusConnection()
 
 	// Subscribe to the pfmDoneProcessing signal
-	if err := ndbConn.AddMatchSignal(
-		dbus.WithMatchObjectPath(ndbObjectPath),
-		dbus.WithMatchInterface(ndbInterface),
-		dbus.WithMatchMember("pfmDoneProcessing"),
-	); err != nil {
+	if err := addMatch(ndbConn); err != nil {
 		return fmt.Errorf("library rescan: error while adding match signal: %w", err)
 	}
-	ndbConn.Signal(rescanSignal)
+	signalTo(ndbConn, rescanSignal)
 
 	// Trigger the rescan
 	var scanType = "pfmRescanBooks"
@@ -30,7 +26,7 @@ func LibraryRescan(timeoutSeconds int, fullScan bool) error {
 	}
 
 	ndbObj, _ := getNdbObject(ndbConn)
-	ndbObj.Call(ndbInterface+"."+scanType, 0)
+	callNoop(ndbObj, ndbInterface+"."+scanType)
 
 	// Wait for the pfmDoneProcessing signal or timeout
 	select {
@@ -53,3 +49,16 @@ func isDoneProcessingSignal(rs *dbus.Signal) (bool, error) {
 	}
 	return true, nil
 }
+
+// Injectable wrappers
+var (
+	addMatch = func(conn *dbus.Conn) error {
+		return conn.AddMatchSignal(
+			dbus.WithMatchObjectPath(ndbObjectPath),
+			dbus.WithMatchInterface(ndbInterface),
+			dbus.WithMatchMember("pfmDoneProcessing"),
+		)
+	}
+	signalTo = func(conn *dbus.Conn, ch chan<- *dbus.Signal) { conn.Signal(ch) }
+	callNoop = func(obj dbus.BusObject, method string) { obj.Call(method, 0) }
+)
