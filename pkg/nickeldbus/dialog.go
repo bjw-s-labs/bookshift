@@ -1,11 +1,15 @@
-// Package nickeldbus implements all NickelDbus interactions of KoboMail
+// Dialog APIs to show notifications via NickelDbus.
 package nickeldbus
 
-import "github.com/godbus/dbus/v5"
+import "log"
 
 // DialogCreate creates a dialog to show a notification to the user
 func DialogCreate(initialMsg string) {
-	ndbObj, _ := getNdbObject(nil)
+	ndbObj, err := getNdbObject(nil)
+	if err != nil {
+		log.Printf("nickeldbus: DialogCreate: getNdbObject error: %v", err)
+		return
+	}
 	callWithArgs(ndbObj, ndbInterface+".dlgConfirmCreate")
 	callWithArgs(ndbObj, ndbInterface+".dlgConfirmSetTitle", "KoboMail")
 	callWithArgs(ndbObj, ndbInterface+".dlgConfirmSetBody", initialMsg)
@@ -16,15 +20,20 @@ func DialogCreate(initialMsg string) {
 
 // DialogUpdate updates a dialog with a new body
 func DialogUpdate(body string) {
-	ndbObj, _ := getNdbObject(nil)
+	ndbObj, err := getNdbObject(nil)
+	if err != nil {
+		log.Printf("nickeldbus: DialogUpdate: getNdbObject error: %v", err)
+		return
+	}
 	callWithArgs(ndbObj, ndbInterface+".dlgConfirmSetBody", body)
 }
 
 // DialogAddOKButton updates a dialog with a confirmation button
 func DialogAddOKButton() {
-	ndbObj, _ := getNdbObject(nil)
+	ndbObj, err := getNdbObject(nil)
+	if err != nil {
+		log.Printf("nickeldbus: DialogAddOKButton: getNdbObject error: %v", err)
+		return
+	}
 	callWithArgs(ndbObj, ndbInterface+".dlgConfirmSetAccept", "OK")
 }
-
-// Injectable call wrapper for tests
-var callWithArgs = func(obj dbus.BusObject, method string, args ...interface{}) { obj.Call(method, 0, args...) }

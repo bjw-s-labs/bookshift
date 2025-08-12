@@ -1,6 +1,8 @@
 package nickeldbus
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -104,5 +106,37 @@ func TestLibraryRescan_AddMatchError(t *testing.T) {
 	callNoop = func(obj dbus.BusObject, method string) {}
 	if err := LibraryRescan(1, false); err == nil {
 		t.Fatalf("expected add-match error")
+	}
+}
+
+// TestLibraryRescan_SystemBusError verifies the system bus error is returned.
+func TestLibraryRescan_SystemBusError(t *testing.T) {
+	orig := systemBus
+	t.Cleanup(func() { systemBus = orig })
+	systemBus = func() (*dbus.Conn, error) { return nil, errors.New("no bus") }
+	if err := LibraryRescan(1, false); err == nil {
+		t.Fatalf("expected system bus error")
+	}
+}
+
+// TestLibraryRescanContext_Canceled verifies context cancellation is honored.
+func TestLibraryRescanContext_Canceled(t *testing.T) {
+	origAdd, origSig, origBus, origObj, origCall := addMatch, signalTo, systemBus, objectFor, callNoop
+	t.Cleanup(func() {
+		addMatch, signalTo, systemBus, objectFor, callNoop = origAdd, origSig, origBus, origObj, origCall
+	})
+
+	// Set up a connection that never emits a signal
+	fc := &fakeConn{}
+	addMatch = func(conn *dbus.Conn) error { return fc.AddMatchSignal() }
+	signalTo = func(conn *dbus.Conn, ch chan<- *dbus.Signal) { fc.Signal(ch) }
+	systemBus = func() (*dbus.Conn, error) { return &dbus.Conn{}, nil }
+	objectFor = func(conn *dbus.Conn) dbus.BusObject { return fakeObj{} }
+	callNoop = func(obj dbus.BusObject, method string) {}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
+	defer cancel()
+	if err := LibraryRescanContext(ctx, false); err == nil {
+		t.Fatalf("expected context timeout/cancel error")
 	}
 }

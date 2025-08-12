@@ -1,38 +1,11 @@
 package nickeldbus
 
 import (
-	"context"
 	"errors"
 	"testing"
 
 	"github.com/godbus/dbus/v5"
 )
-
-type fakeObj struct{}
-
-func (fakeObj) Call(method string, flags dbus.Flags, args ...interface{}) *dbus.Call {
-	return &dbus.Call{}
-}
-func (fakeObj) CallWithContext(ctx context.Context, method string, flags dbus.Flags, args ...interface{}) *dbus.Call {
-	return &dbus.Call{}
-}
-func (fakeObj) Go(method string, flags dbus.Flags, ch chan *dbus.Call, args ...interface{}) *dbus.Call {
-	return &dbus.Call{}
-}
-func (fakeObj) GoWithContext(ctx context.Context, method string, flags dbus.Flags, ch chan *dbus.Call, args ...interface{}) *dbus.Call {
-	return &dbus.Call{}
-}
-func (fakeObj) AddMatchSignal(iface, member string, options ...dbus.MatchOption) *dbus.Call {
-	return &dbus.Call{}
-}
-func (fakeObj) RemoveMatchSignal(iface, member string, options ...dbus.MatchOption) *dbus.Call {
-	return &dbus.Call{}
-}
-func (fakeObj) GetProperty(p string) (dbus.Variant, error)      { return dbus.Variant{}, nil }
-func (fakeObj) StoreProperty(p string, value interface{}) error { return nil }
-func (fakeObj) SetProperty(p string, v interface{}) error       { return nil }
-func (fakeObj) Destination() string                             { return "dest" }
-func (fakeObj) Path() dbus.ObjectPath                           { return dbus.ObjectPath("/x") }
 
 // TestIsInstalled_TrueAndFalse verifies both the installed and not-installed
 // paths by toggling the introspection call result.

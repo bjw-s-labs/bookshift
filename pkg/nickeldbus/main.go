@@ -1,9 +1,8 @@
-// Package nickeldbus implements all NickelDbus interactions of KoboMail
+// Package nickeldbus implements NickelDbus interactions used by bookshift.
 package nickeldbus
 
 import (
 	"github.com/godbus/dbus/v5"
-	"github.com/godbus/dbus/v5/introspect"
 )
 
 const (
@@ -53,20 +52,3 @@ func GetVersion() (string, error) {
 	}
 	return versionCall(ndbObj)
 }
-
-// Injectable wrappers for testability
-var (
-	systemBus      = dbus.SystemBus
-	objectFor      = func(conn *dbus.Conn) dbus.BusObject { return conn.Object(ndbInterface, ndbObjectPath) }
-	introspectCall = func(obj dbus.BusObject) error {
-		_, err := introspect.Call(obj)
-		return err
-	}
-	versionCall = func(obj dbus.BusObject) (string, error) {
-		var v string
-		if err := obj.Call(ndbInterface+".ndbVersion", 0).Store(&v); err != nil {
-			return "", err
-		}
-		return v, nil
-	}
-)
