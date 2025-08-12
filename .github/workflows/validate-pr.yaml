@@ -29,7 +29,4 @@ jobs:
         run: go mod download
 
       - name: Run tests
-        uses: n8maninger/action-golang-test@ef0e294645c281baf752f60bdfb68fc6c7f286cf # v2.1.1
-        with:
-          package: ""
-          args: ./cmd/... ./pkg/...
+        run: go test -cover ./...
