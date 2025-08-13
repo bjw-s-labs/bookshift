@@ -23,19 +23,14 @@ func NewImapSyncer(shareConfig *config.ImapConfig) *ImapSyncer {
 
 func (s *ImapSyncer) Run(targetFolder string, validExtensions []string, overwriteExistingFiles bool) error {
 	// Connect to the IMAP server
-	imapConnection := ImapClient{
-		Host:     s.config.Host,
-		Port:     s.config.Port,
-		Username: s.config.Username,
-		Password: s.config.Password,
+	imapConnection := newImapClient(s.config)
+	if err := imapConnect(imapConnection, s.config.Mailbox); err != nil {
+		return fmt.Errorf("could not connect to IMAP server %s: %w", s.config.Host, err)
 	}
-	if err := imapConnection.Connect(s.config.Mailbox); err != nil {
-		return fmt.Errorf("could not connect to IMAP server %s. %w", s.config.Host, err)
-	}
-	defer imapConnection.Disconnect()
+	defer imapDisconnect(imapConnection)
 
 	// Collect messages from the IMAP server
-	allMessages, err := imapConnection.CollectMessages(
+	allMessages, err := imapCollect(imapConnection,
 		!s.config.ProcessReadEmails,
 		s.config.FilterField,
 		s.config.FilterValue,
@@ -45,8 +40,8 @@ func (s *ImapSyncer) Run(targetFolder string, validExtensions []string, overwrit
 	}
 
 	// Download attachments for each message
-	for _, message := range allMessages {
-		if err := message.DownloadAttachments(
+	for _, m := range allMessages {
+		if err := imapDownload(m,
 			targetFolder,
 			validExtensions,
 			overwriteExistingFiles,

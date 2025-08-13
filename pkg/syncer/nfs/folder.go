@@ -10,10 +10,10 @@ import (
 type NfsFolder struct {
 	Folder string
 
-	nfsClient *NfsClient
+	nfsClient NfsAPI
 }
 
-func NewNfsFolder(folder string, conn *NfsClient) *NfsFolder {
+func NewNfsFolder(folder string, conn NfsAPI) *NfsFolder {
 	return &NfsFolder{
 		Folder:    folder,
 		nfsClient: conn,
@@ -41,6 +41,12 @@ func (s *NfsFolder) fetchAllFiles(rootFolder string, folder string, validExtensi
 		return nil, err
 	}
 
+	// Build a lower-cased set of valid extensions for case-insensitive match
+	lowerExts := make([]string, 0, len(validExtensions))
+	for _, e := range validExtensions {
+		lowerExts = append(lowerExts, strings.ToLower(e))
+	}
+
 	for _, file := range files {
 		fullPath := path.Join(folder, file.Name)
 		if recurse && file.IsDir {
@@ -50,8 +56,8 @@ func (s *NfsFolder) fetchAllFiles(rootFolder string, folder string, validExtensi
 			}
 			allFiles = append(allFiles, tmpFiles...)
 		} else if !file.IsDir {
-			extension := path.Ext(fullPath)
-			if len(validExtensions) > 0 && !slices.Contains(validExtensions, extension) {
+			extension := strings.ToLower(path.Ext(fullPath))
+			if len(lowerExts) > 0 && !slices.Contains(lowerExts, extension) {
 				continue
 			}
 

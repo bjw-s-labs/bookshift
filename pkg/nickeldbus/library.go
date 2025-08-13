@@ -1,7 +1,8 @@
-// Package nickeldbus implements all NickelDbus interactions of KoboMail
+// Library APIs to control the Nickel library via DBus.
 package nickeldbus
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -10,18 +11,24 @@ import (
 
 // LibraryRescan sends a request to completely the library
 func LibraryRescan(timeoutSeconds int, fullScan bool) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSeconds)*time.Second)
+	defer cancel()
+	return LibraryRescanContext(ctx, fullScan)
+}
+
+// LibraryRescanContext sends a request to rescan the library, honoring the provided context for cancellation/timeout.
+func LibraryRescanContext(ctx context.Context, fullScan bool) error {
 	rescanSignal := make(chan *dbus.Signal, 10)
-	ndbConn, _ := getSystemDbusConnection()
+	ndbConn, err := getSystemDbusConnection()
+	if err != nil {
+		return fmt.Errorf("library rescan: system bus: %w", err)
+	}
 
 	// Subscribe to the pfmDoneProcessing signal
-	if err := ndbConn.AddMatchSignal(
-		dbus.WithMatchObjectPath(ndbObjectPath),
-		dbus.WithMatchInterface(ndbInterface),
-		dbus.WithMatchMember("pfmDoneProcessing"),
-	); err != nil {
+	if err := addMatch(ndbConn); err != nil {
 		return fmt.Errorf("library rescan: error while adding match signal: %w", err)
 	}
-	ndbConn.Signal(rescanSignal)
+	signalTo(ndbConn, rescanSignal)
 
 	// Trigger the rescan
 	var scanType = "pfmRescanBooks"
@@ -30,7 +37,7 @@ func LibraryRescan(timeoutSeconds int, fullScan bool) error {
 	}
 
 	ndbObj, _ := getNdbObject(ndbConn)
-	ndbObj.Call(ndbInterface+"."+scanType, 0)
+	callNoop(ndbObj, ndbInterface+"."+scanType)
 
 	// Wait for the pfmDoneProcessing signal or timeout
 	select {
@@ -41,8 +48,8 @@ func LibraryRescan(timeoutSeconds int, fullScan bool) error {
 		} else if !valid {
 			return fmt.Errorf("library rescan error: expected 'pfmDoneProcessing', got '%s'", rs.Name)
 		}
-	case <-time.After(time.Duration(timeoutSeconds) * time.Second):
-		return fmt.Errorf("library rescan: timeout waiting for rescan to complete")
+	case <-ctx.Done():
+		return fmt.Errorf("library rescan: timeout/canceled: %w", ctx.Err())
 	}
 	return nil
 }

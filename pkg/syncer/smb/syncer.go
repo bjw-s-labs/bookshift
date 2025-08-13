@@ -31,17 +31,17 @@ func (s *SmbSyncer) Run(targetFolder string, validExtensions []string, overwrite
 		Domain:   s.config.Domain,
 	}
 
-	if err := smbConnection.Connect(); err != nil {
-		return fmt.Errorf("could not connect to SMB server %s. %w", s.config.Host, err)
+	if err := smbConnect(&smbConnection); err != nil {
+		return fmt.Errorf("could not connect to SMB server %s: %w", s.config.Host, err)
 	}
-	defer smbConnection.Disconnect()
+	defer smbDisconnect(&smbConnection)
 
 	// Connect to the share
-	smbShareConnection := NewSmbShareConnection(s.config.Share, &smbConnection)
-	if err := smbShareConnection.Connect(); err != nil {
+	smbShareConnection := newSmbShare(s.config.Share, &smbConnection)
+	if err := smbShareConnect(smbShareConnection); err != nil {
 		return fmt.Errorf("could not connect to SMB share %s. %w", s.config.Share, err)
 	}
-	defer smbShareConnection.Disconnect()
+	defer smbShareDisconnect(smbShareConnection)
 
 	// Fetch all files in the share
 	allFiles, err := smbShareConnection.FetchFiles(s.config.Folder, validExtensions, true)
@@ -53,7 +53,7 @@ func (s *SmbSyncer) Run(targetFolder string, validExtensions []string, overwrite
 	for _, file := range allFiles {
 		if err := file.Download(
 			targetFolder,
-			file.CleanFileName(),
+			"",
 			overwriteExistingFiles,
 			s.config.KeepFolderStructure,
 			s.config.RemoveFilesAfterDownload,

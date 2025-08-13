@@ -17,13 +17,16 @@ const defaultConfigFile = "config.yaml"
 
 var version string
 
+// test seam for exiting so tests can intercept instead of terminating the process
+var exit = os.Exit
+
 type VersionFlag string
 
 func (v VersionFlag) Decode(_ *kong.DecodeContext) error { return nil }
 func (v VersionFlag) IsBool() bool                       { return true }
 func (v VersionFlag) BeforeApply(app *kong.Kong, vars kong.Vars) error {
 	fmt.Println(vars["version"])
-	app.Exit(0)
+	exit(0)
 	return nil
 }
 
@@ -73,6 +76,7 @@ func Execute() error {
 			"version":     string(cli.Version),
 			"config_file": defaultConfigFile,
 		},
+		kong.Exit(exit),
 	)
 
 	// Create Configuration object and set defaults
@@ -86,7 +90,8 @@ func Execute() error {
 		for _, e := range errors {
 			slog.Error(e)
 		}
-		os.Exit(1)
+		exit(1)
+		return nil
 	}
 
 	// Set the log level based on the configuration
@@ -97,7 +102,8 @@ func Execute() error {
 	// Run the application
 	if err := ctx.Run(&appConfig, logger); err != nil {
 		slog.Error(err.Error())
-		os.Exit(1)
+		exit(1)
+		return nil
 	}
 	return nil
 }

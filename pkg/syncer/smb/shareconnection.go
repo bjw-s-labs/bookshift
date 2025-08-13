@@ -13,10 +13,10 @@ import (
 
 type SmbShareConnection struct {
 	Share         string
-	SmbConnection *SmbConnection
+	SmbConnection SmbConnAPI
 }
 
-func NewSmbShareConnection(share string, conn *SmbConnection) *SmbShareConnection {
+func NewSmbShareConnection(share string, conn SmbConnAPI) *SmbShareConnection {
 	return &SmbShareConnection{
 		Share:         share,
 		SmbConnection: conn,
@@ -25,7 +25,7 @@ func NewSmbShareConnection(share string, conn *SmbConnection) *SmbShareConnectio
 
 func (s *SmbShareConnection) Connect() error {
 	slog.Debug("Initiating SMB connection", "share", s.Share)
-	if err := s.SmbConnection.connection.TreeConnect(s.Share); err != nil {
+	if err := s.SmbConnection.TreeConnect(s.Share); err != nil {
 		if err == smb.StatusMap[smb.StatusBadNetworkName] {
 			return fmt.Errorf("share %s not found", s.Share)
 		}
@@ -36,7 +36,7 @@ func (s *SmbShareConnection) Connect() error {
 
 func (s *SmbShareConnection) Disconnect() error {
 	slog.Debug("Disconnecting SMB connection", "share", s.Share)
-	if err := s.SmbConnection.connection.TreeDisconnect(s.Share); err != nil {
+	if err := s.SmbConnection.TreeDisconnect(s.Share); err != nil {
 		return err
 	}
 	return nil
@@ -58,12 +58,18 @@ func (s *SmbShareConnection) fetchAllFiles(rootFolder string, subfolder string, 
 		subfolder = rootFolder
 	}
 
-	files, err := s.SmbConnection.connection.ListDirectory(s.Share, subfolder, "*")
+	files, err := s.SmbConnection.ListDirectory(s.Share, subfolder, "*")
 	if err != nil {
 		if err == smb.StatusMap[smb.StatusAccessDenied] {
 			return nil, err
 		}
 		return nil, err
+	}
+
+	// Build a lower-cased set of valid extensions for case-insensitive match
+	lowerExts := make([]string, 0, len(validExtensions))
+	for _, e := range validExtensions {
+		lowerExts = append(lowerExts, strings.ToLower(e))
 	}
 
 	for _, file := range files {
@@ -76,8 +82,8 @@ func (s *SmbShareConnection) fetchAllFiles(rootFolder string, subfolder string, 
 			}
 			allFiles = append(allFiles, tmpFiles...)
 		} else if !file.IsDir && !file.IsJunction {
-			extension := path.Ext(cleanPath)
-			if len(validExtensions) > 0 && !slices.Contains(validExtensions, extension) {
+			extension := strings.ToLower(path.Ext(cleanPath))
+			if len(lowerExts) > 0 && !slices.Contains(lowerExts, extension) {
 				continue
 			}
 

@@ -14,34 +14,36 @@ type ImapClient struct {
 	Username string
 	Password *sensitive.String
 
-	Client *imapclient.Client
+	Client  imapConn
+	Backend ImapOps
 }
 
+// Connect establishes a TLS IMAP connection, logs in, selects the mailbox, and wires the backend.
 func (ic *ImapClient) Connect(mailbox string) error {
 	connStr := fmt.Sprintf("%s:%v", ic.Host, ic.Port)
 
-	// Connect to the IMAP server
-	c, err := imapclient.DialTLS(connStr, nil)
+	// Connect to the IMAP server (via seam)
+	client, real, err := imapDial(connStr)
 	if err != nil {
 		return err
 	}
 
-	// Log in to the IMAP server
-	if err := c.Login(ic.Username, string(*ic.Password)).Wait(); err != nil {
+	if err := client.Login(ic.Username, string(*ic.Password)).Wait(); err != nil {
 		return err
 	}
 
-	// Select the desired mailbox
-	_, err = c.Select(mailbox, nil).Wait()
-	if err != nil {
+	if _, err := client.Select(mailbox, nil).Wait(); err != nil {
 		return fmt.Errorf("failed to select IMAP mailbox (%w)", err)
 	}
 
-	// Store the client
-	ic.Client = c
+	ic.Client = client
+	if real != nil {
+		ic.Backend = &realImapOps{c: real}
+	}
 	return nil
 }
 
+// Disconnect logs out and closes the IMAP connection if present.
 func (ic *ImapClient) Disconnect() error {
 	// If the client is nil, there's nothing to disconnect from.
 	if ic.Client == nil {
@@ -61,8 +63,8 @@ func (ic *ImapClient) Disconnect() error {
 }
 
 func (ic *ImapClient) CollectMessages(ignoreReadMessages bool, filterHeader string, filterValue string) ([]*ImapMessage, error) {
-	// If the client is nil return an error indicating that the client is not connected.
-	if ic.Client == nil {
+	// If the backend is nil return an error indicating that the client is not connected.
+	if ic.Backend == nil {
 		return nil, fmt.Errorf("failed to collect messages, IMAP client not connected")
 	}
 
@@ -85,39 +87,25 @@ func (ic *ImapClient) CollectMessages(ignoreReadMessages bool, filterHeader stri
 		criteria.Header = append(criteria.Header, imap.SearchCriteriaHeaderField{Key: "SUBJECT", Value: filterValue})
 	}
 
-	// Execute the search command
-	searchData, err := ic.Client.UIDSearch(criteria, nil).Wait()
+	uids, err := ic.Backend.UIDSearch(criteria)
 	if err != nil {
 		return nil, err
 	}
 
 	// Iterate over all matching message UIDs and create new ImapMessage instances.
 	var filteredMessages []*ImapMessage
-	searchUIDs := searchData.AllUIDs()
-	for _, msgUid := range searchUIDs {
+	for _, msgUid := range uids {
 		filteredMessages = append(filteredMessages, NewImapMessage(msgUid, ic))
 	}
 
 	return filteredMessages, nil
 }
 
+// fetchByUID retrieves a single message by UID using the backend.
 func (ic *ImapClient) fetchByUID(uid imap.UID, options *imap.FetchOptions) (*imapclient.FetchMessageBuffer, error) {
-	// If the client is nil return an error indicating that the client is not connected.
-	if ic.Client == nil {
+	// If the backend is nil return an error indicating that the client is not connected.
+	if ic.Backend == nil {
 		return nil, fmt.Errorf("failed to fetch message, IMAP client not connected")
 	}
-
-	// Fetch the message with the specified UID using the provided options.
-	messages, err := ic.Client.Fetch(imap.UIDSetNum(uid), options).Collect()
-	if err != nil {
-		return nil, err
-	}
-
-	// Check if exactly one message was returned. If not, return an error.
-	if len(messages) != 1 {
-		return nil, fmt.Errorf("len(messages) = %v, want 1", len(messages))
-	}
-
-	// Return the fetched message.
-	return messages[0], nil
+	return ic.Backend.FetchOneByUID(uid, options)
 }
