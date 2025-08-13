@@ -11,7 +11,7 @@ func DialogCreate(initialMsg string) {
 		return
 	}
 	callWithArgs(ndbObj, ndbInterface+".dlgConfirmCreate")
-	callWithArgs(ndbObj, ndbInterface+".dlgConfirmSetTitle", "KoboMail")
+	callWithArgs(ndbObj, ndbInterface+".dlgConfirmSetTitle", "bookshift")
 	callWithArgs(ndbObj, ndbInterface+".dlgConfirmSetBody", initialMsg)
 	callWithArgs(ndbObj, ndbInterface+".dlgConfirmSetModal", false)
 	callWithArgs(ndbObj, ndbInterface+".dlgConfirmShowClose", false)
