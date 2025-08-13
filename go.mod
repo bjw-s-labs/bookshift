@@ -6,7 +6,7 @@ toolchain go1.24.6
 
 require (
 	github.com/alecthomas/kong v1.12.1
-	github.com/emersion/go-imap/v2 v2.0.0-beta.5
+	github.com/emersion/go-imap/v2 v2.0.0-beta.6
 	github.com/go-playground/sensitive v0.0.1
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/goccy/go-yaml v1.18.0
