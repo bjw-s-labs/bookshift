@@ -1,6 +1,6 @@
 module github.com/bjw-s-labs/bookshift
 
-go 1.24
+go 1.25
 
 toolchain go1.25.0
 
