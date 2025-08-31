@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"os"
 	"time"
 
@@ -103,8 +104,9 @@ func (c *NfsClient) ReadFileAll(path string, w io.Writer) (int, error) {
 		return 0, fmt.Errorf("client is not connected")
 	}
 	n, err := c.client.ReadFileAll(path, w)
-	if n > ^uint64(0)>>1 { // cap to max int on platform
-		return int(^uint64(0) >> 1), err
+	// Cap to the platform's max int to avoid overflow when converting from uint64.
+	if n > uint64(math.MaxInt) {
+		return math.MaxInt, err
 	}
 	return int(n), err
 }
