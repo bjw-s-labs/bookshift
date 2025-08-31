@@ -1,5 +1,5 @@
 ---
-target_folder: /mnt/onboard/KoboMailLibrary
+target_folder: /mnt/onboard/BookshiftLibrary
 valid_extensions:
   - .epub
   - .kepub

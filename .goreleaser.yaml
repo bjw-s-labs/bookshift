@@ -37,11 +37,13 @@ builds:
       - CGO_ENABLED=0
     goarch:
       - arm
+    goarm:
+      - 7
     goos:
       - linux
     ldflags:
       - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
-    binary: usr/local/bookshift/bookshift
+    binary: mnt/onboard/.adds/bookshift/bookshift
   - id: pocketbook
     env:
       - CGO_ENABLED=0
