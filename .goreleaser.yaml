@@ -41,7 +41,7 @@ builds:
       - linux
     ldflags:
       - -s -w -X github.com/bjw-s-labs/bookshift/cmd.version={{.Version}}
-    binary: KoboRoot/usr/local/bookshift/bookshift
+    binary: usr/local/bookshift/bookshift
   - id: pocketbook
     env:
       - CGO_ENABLED=0
@@ -68,8 +68,6 @@ archives:
     files:
       - src: kobo/*
         dst: /
-      - src: config.yaml.dist
-        dst: /KoboRoot/usr/local/bookshift/config.yaml.dist
   - id: pocketbook
     name_template: "pocketbook"
     ids:
