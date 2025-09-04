@@ -1,8 +1,6 @@
 module github.com/bjw-s-labs/bookshift
 
-go 1.25
-
-toolchain go1.25.1
+go 1.25.1
 
 require (
 	github.com/alecthomas/kong v1.12.1
