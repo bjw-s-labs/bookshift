@@ -1,10 +1,12 @@
 package imap
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/bjw-s-labs/bookshift/pkg/config"
 )
@@ -109,4 +111,28 @@ func TestImapSyncer_Run_HappyPath(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, "file.epub")); err != nil {
 		t.Fatalf("expected file: %v", err)
 	}
+}
+
+// TestImapSyncer_RunContext_Cancel verifies that context cancelation is observed.
+func TestImapSyncer_RunContext_Cancel(t *testing.T) {
+	cfg := &config.ImapConfig{Host: "h", Mailbox: "INBOX"}
+	s := NewImapSyncer(cfg)
+
+	// Provide many messages to iterate so we can cancel between iterations.
+	msgs := []*ImapMessage{{}, {}, {}, {}, {}}
+	origNew, origCollect := newImapClient, imapCollect
+	t.Cleanup(func() { newImapClient, imapCollect = origNew, origCollect })
+	newImapClient = func(cfg *config.ImapConfig) imapSyncClient { return &fakeSyncClient{msgs: msgs} }
+	imapCollect = func(c imapSyncClient, unreadOnly bool, field, value string) ([]*ImapMessage, error) { return msgs, nil }
+	// Download sleeps a bit to allow cancel to fire between items
+	origDL := imapDownload
+	t.Cleanup(func() { imapDownload = origDL })
+	imapDownload = func(m *ImapMessage, dst string, valid []string, overwrite bool, remove bool) error {
+		time.Sleep(10 * time.Millisecond)
+		return nil
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() { time.Sleep(15 * time.Millisecond); cancel() }()
+	_ = s.RunContext(ctx, t.TempDir(), []string{".epub"}, false)
 }

@@ -1,7 +1,9 @@
 package smb
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/bjw-s-labs/bookshift/pkg/config"
 )
@@ -22,6 +24,21 @@ func NewSmbSyncer(shareConfig *config.SmbNetworkShareConfig) *SmbSyncer {
 }
 
 func (s *SmbSyncer) Run(targetFolder string, validExtensions []string, overwriteExistingFiles bool) error {
+	return s.RunContext(context.Background(), targetFolder, validExtensions, overwriteExistingFiles)
+}
+
+func (s *SmbSyncer) RunContext(ctx context.Context, targetFolder string, validExtensions []string, overwriteExistingFiles bool) error {
+	if s.config.TimeoutSeconds > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(s.config.TimeoutSeconds)*time.Second)
+		defer cancel()
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	// Connect to the SMB server
 	smbConnection := SmbConnection{
 		Host:     s.config.Host,
@@ -51,6 +68,11 @@ func (s *SmbSyncer) Run(targetFolder string, validExtensions []string, overwrite
 
 	// Download all files
 	for _, file := range allFiles {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		if err := file.Download(
 			targetFolder,
 			"",

@@ -1,6 +1,7 @@
 package nfs
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -23,6 +24,22 @@ func NewNfsSyncer(shareConfig *config.NfsNetworkShareConfig) *NfsSyncer {
 }
 
 func (s *NfsSyncer) Run(targetFolder string, validExtensions []string, overwriteExistingFiles bool) error {
+	// Backwards compatible wrapper without context
+	return s.RunContext(context.Background(), targetFolder, validExtensions, overwriteExistingFiles)
+}
+
+func (s *NfsSyncer) RunContext(ctx context.Context, targetFolder string, validExtensions []string, overwriteExistingFiles bool) error {
+	if s.config.TimeoutSeconds > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(s.config.TimeoutSeconds)*time.Second)
+		defer cancel()
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
 	// Connect to the NFS server
 	nfsClient := newNfsClient(s.config.Host, s.config.Port)
 	if err := nfsConnect(nfsClient, 10*time.Second); err != nil {
@@ -41,6 +58,11 @@ func (s *NfsSyncer) Run(targetFolder string, validExtensions []string, overwrite
 
 	// Download all files
 	for i := range allFiles {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		if err := nfsDownload(&allFiles[i],
 			targetFolder,
 			"",

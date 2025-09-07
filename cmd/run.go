@@ -1,7 +1,13 @@
 package cmd
 
 import (
+	"context"
 	"log/slog"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/bjw-s-labs/bookshift/pkg/config"
 	"github.com/bjw-s-labs/bookshift/pkg/kobo"
@@ -21,47 +27,88 @@ func (r *RunCommand) Run(cfg *config.Config, logger *slog.Logger) error {
 	util.DryRun = r.DryRun
 	util.ShowProgressBars = !r.NoProgress
 
+	// Root cancellation context (Ctrl+C / SIGTERM)
+	rootCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	numberOfFilesAtStart, err := countFiles(cfg.TargetFolder, cfg.ValidExtensions, true)
 	if err != nil {
 		return err
 	}
 
-	for _, src := range cfg.Sources {
-		switch src.Type {
-		case "nfs":
-			cfgNfs, ok := src.Config.(*config.NfsNetworkShareConfig)
-			if !ok {
-				logger.Error("invalid configuration type for NFS source")
-				continue
-			}
-			if err := doNfs(cfgNfs, cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
-				logger.Error("failed to sync from NFS share", "error", err)
-				continue
-			}
-
-		case "smb":
-			cfgSmb, ok := src.Config.(*config.SmbNetworkShareConfig)
-			if !ok {
-				logger.Error("invalid configuration type for SMB source")
-				continue
-			}
-			if err := doSmb(cfgSmb, cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
-				logger.Error("failed to sync from SMB share", "error", err)
-				continue
-			}
-
-		case "imap":
-			cfgImap, ok := src.Config.(*config.ImapConfig)
-			if !ok {
-				logger.Error("invalid configuration type for IMAP source")
-				continue
-			}
-			if err := doImap(cfgImap, cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
-				logger.Error("failed to sync from IMAP server", "error", err)
-				continue
-			}
-		}
+	// Process sources concurrently with a bound to avoid overwhelming endpoints
+	conc := cfg.Concurrency
+	if conc <= 0 {
+		conc = 3
 	}
+	if len(cfg.Sources) < conc {
+		conc = len(cfg.Sources)
+	}
+	if conc < 1 {
+		conc = 1
+	}
+	sem := make(chan struct{}, conc)
+	var wg sync.WaitGroup
+
+	for _, s := range cfg.Sources {
+		src := s // capture
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			// Per-source context (with timeout if configured)
+			ctx := rootCtx
+			switch src.Type {
+			case "nfs":
+				cfgNfs, ok := src.Config.(*config.NfsNetworkShareConfig)
+				if !ok {
+					logger.Error("invalid configuration type for NFS source")
+					return
+				}
+				if cfgNfs.TimeoutSeconds > 0 {
+					var cancel context.CancelFunc
+					ctx, cancel = context.WithTimeout(ctx, time.Duration(cfgNfs.TimeoutSeconds)*time.Second)
+					defer cancel()
+				}
+				if err := doNfs(ctx, cfgNfs, cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
+					logger.Error("failed to sync from NFS share", "error", err)
+				}
+
+			case "smb":
+				cfgSmb, ok := src.Config.(*config.SmbNetworkShareConfig)
+				if !ok {
+					logger.Error("invalid configuration type for SMB source")
+					return
+				}
+				if cfgSmb.TimeoutSeconds > 0 {
+					var cancel context.CancelFunc
+					ctx, cancel = context.WithTimeout(ctx, time.Duration(cfgSmb.TimeoutSeconds)*time.Second)
+					defer cancel()
+				}
+				if err := doSmb(ctx, cfgSmb, cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
+					logger.Error("failed to sync from SMB share", "error", err)
+				}
+
+			case "imap":
+				cfgImap, ok := src.Config.(*config.ImapConfig)
+				if !ok {
+					logger.Error("invalid configuration type for IMAP source")
+					return
+				}
+				if cfgImap.TimeoutSeconds > 0 {
+					var cancel context.CancelFunc
+					ctx, cancel = context.WithTimeout(ctx, time.Duration(cfgImap.TimeoutSeconds)*time.Second)
+					defer cancel()
+				}
+				if err := doImap(ctx, cfgImap, cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
+					logger.Error("failed to sync from IMAP server", "error", err)
+				}
+			}
+		}()
+	}
+	wg.Wait()
 
 	numberOfFilesAtEnd, err := countFiles(cfg.TargetFolder, cfg.ValidExtensions, true)
 	if err != nil {
@@ -85,14 +132,14 @@ func (r *RunCommand) Run(cfg *config.Config, logger *slog.Logger) error {
 // test seams (overridable in tests)
 var (
 	countFiles = util.CountFilesInFolder
-	doNfs      = func(cfg *config.NfsNetworkShareConfig, target string, valid []string, overwrite bool) error {
-		return nfs.NewNfsSyncer(cfg).Run(target, valid, overwrite)
+	doNfs      = func(ctx context.Context, cfg *config.NfsNetworkShareConfig, target string, valid []string, overwrite bool) error {
+		return nfs.NewNfsSyncer(cfg).RunContext(ctx, target, valid, overwrite)
 	}
-	doSmb = func(cfg *config.SmbNetworkShareConfig, target string, valid []string, overwrite bool) error {
-		return smb.NewSmbSyncer(cfg).Run(target, valid, overwrite)
+	doSmb = func(ctx context.Context, cfg *config.SmbNetworkShareConfig, target string, valid []string, overwrite bool) error {
+		return smb.NewSmbSyncer(cfg).RunContext(ctx, target, valid, overwrite)
 	}
-	doImap = func(cfg *config.ImapConfig, target string, valid []string, overwrite bool) error {
-		return imap.NewImapSyncer(cfg).Run(target, valid, overwrite)
+	doImap = func(ctx context.Context, cfg *config.ImapConfig, target string, valid []string, overwrite bool) error {
+		return imap.NewImapSyncer(cfg).RunContext(ctx, target, valid, overwrite)
 	}
 	isKoboDevice      = kobo.IsKoboDevice
 	updateKoboLibrary = kobo.UpdateLibrary

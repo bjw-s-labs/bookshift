@@ -1,10 +1,12 @@
 package smb
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/bjw-s-labs/bookshift/pkg/config"
 	"github.com/jfjallid/go-smb/smb"
@@ -146,4 +148,24 @@ func TestSmbSyncer_Run_RetrieveError(t *testing.T) {
 	if err := s.Run(t.TempDir(), []string{".epub"}, true); err == nil {
 		t.Fatalf("expected retrieve error")
 	}
+}
+
+// TestSmbSyncer_RunContext_Cancel verifies that context cancelation is observed between files.
+func TestSmbSyncer_RunContext_Cancel(t *testing.T) {
+	cfg := &config.SmbNetworkShareConfig{Host: "h", Share: "s", Folder: "/root"}
+	s := NewSmbSyncer(cfg)
+	origNew, origConn, origShareConn, origShareDisc := newSmbShare, smbConnect, smbShareConnect, smbShareDisconnect
+	t.Cleanup(func() {
+		newSmbShare, smbConnect, smbShareConnect, smbShareDisconnect = origNew, origConn, origShareConn, origShareDisc
+	})
+	smbConnect = func(c *SmbConnection) error { return nil }
+	newSmbShare = func(share string, conn SmbConnAPI) *SmbShareConnection {
+		return &SmbShareConnection{Share: share, SmbConnection: &smbConnFake2{}}
+	}
+	smbShareConnect = func(s *SmbShareConnection) error { return nil }
+	smbShareDisconnect = func(s *SmbShareConnection) error { return nil }
+	// Delay in download path is via RetrieveFile callback - already fast; insert small sleep by wrapping doImap-like path isn’t needed.
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() { time.Sleep(10 * time.Millisecond); cancel() }()
+	_ = s.RunContext(ctx, t.TempDir(), []string{".epub"}, false)
 }

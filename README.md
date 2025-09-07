@@ -28,6 +28,7 @@ Notes:
 
 - When new books are downloaded and a Kobo device is detected, the library is refreshed automatically (via NickelDBus or simulated USB plug).
 - File extension matching is case-insensitive.
+- Concurrency: sources are processed in parallel. Control with `concurrency` in the config (default: 3). BookShift also supports cancellation: press Ctrl+C to stop; in-flight operations will respect per-source timeouts or cancel between files/messages.
 
 ## Configuration
 
@@ -38,6 +39,7 @@ Top-level keys:
 - `overwrite_existing_files`: overwrite existing destination files when true.
 - `valid_extensions`: list of allowed extensions (e.g. `[".epub", ".kepub"]`).
 - `sources`: list of source definitions; each has a `type` and a `config` block.
+- `concurrency`: optional, number of sources to process in parallel (default 3).
 
 Example config:
 
@@ -59,6 +61,7 @@ sources:
       folder: incoming
       keep_folderstructure: true
       remove_files_after_download: false
+      timeout_seconds: 120 # optional per-source timeout
 
   - type: nfs
     config:
@@ -67,6 +70,7 @@ sources:
       folder: /export/books
       keep_folderstructure: false
       remove_files_after_download: false
+      timeout_seconds: 120
 
   - type: imap
     config:
@@ -79,6 +83,7 @@ sources:
       filter_value: "[BOOK]"
       process_read_emails: false
       remove_emails_after_download: true
+      timeout_seconds: 180
 ```
 
 Source notes:
@@ -86,6 +91,12 @@ Source notes:
 - SMB: `share` is the share name; `folder` is the path inside the share.
 - NFS: `folder` is the exported path; remote paths use forward slashes.
 - IMAP: Attachments are filtered by extension and decoded using the part’s transfer-encoding (base64, quoted-printable, etc.). When unspecified, base64 is assumed for attachments.
+  Cancellation: IMAP sync checks for cancellation between messages; per-source `timeout_seconds` bounds the session.
+
+Cancellation and timeouts:
+
+- Press Ctrl+C to cancel an ongoing run. BookShift will stop starting new source syncs and each active source will exit promptly.
+- Per-source `timeout_seconds` puts an upper bound on a source run. If exceeded, that source aborts with a timeout error and other sources continue.
 
 ## Kobo setup
 

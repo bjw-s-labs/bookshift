@@ -1,6 +1,7 @@
 package nfs
 
 import (
+	"context"
 	"errors"
 	"io"
 	"os"
@@ -149,4 +150,27 @@ func TestNfsSyncer_Run_DownloadError(t *testing.T) {
 	if err := s.Run(t.TempDir(), []string{".epub"}, true); err == nil {
 		t.Fatalf("expected download error")
 	}
+}
+
+// TestNfsSyncer_RunContext_Cancel verifies that context cancelation is observed between files.
+func TestNfsSyncer_RunContext_Cancel(t *testing.T) {
+	cfg := &config.NfsNetworkShareConfig{Host: "h", Folder: "/r"}
+	s := NewNfsSyncer(cfg)
+	origNew, origConn, origFolder, origFetch, origDl := newNfsClient, nfsConnect, nfsNewFolder, nfsFetchFiles, nfsDownload
+	t.Cleanup(func() {
+		newNfsClient, nfsConnect, nfsNewFolder, nfsFetchFiles, nfsDownload = origNew, origConn, origFolder, origFetch, origDl
+	})
+	newNfsClient = func(host string, port int) NfsAPI { return &fakeNfsEx{} }
+	nfsConnect = func(c NfsAPI, _ time.Duration) error { return nil }
+	nfsNewFolder = func(folder string, conn NfsAPI) *NfsFolder { return &NfsFolder{Folder: folder, nfsClient: conn} }
+	nfsFetchFiles = func(f *NfsFolder, folder string, valid []string, recurse bool) ([]NfsFile, error) {
+		return []NfsFile{{nfsFolder: f, nfsFile: &nfs4.FileInfo{Name: "a.epub"}}, {nfsFolder: f, nfsFile: &nfs4.FileInfo{Name: "b.epub"}}}, nil
+	}
+	nfsDownload = func(nf *NfsFile, dst, name string, overwrite, keep, del bool) error {
+		time.Sleep(10 * time.Millisecond)
+		return nil
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() { time.Sleep(15 * time.Millisecond); cancel() }()
+	_ = s.RunContext(ctx, t.TempDir(), []string{".epub"}, true)
 }

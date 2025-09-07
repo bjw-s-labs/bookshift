@@ -10,6 +10,7 @@ type NfsNetworkShareConfig struct {
 	Folder                   string `yaml:"folder" validate:"required"`
 	KeepFolderStructure      bool   `yaml:"keep_folderstructure"`
 	RemoveFilesAfterDownload bool   `yaml:"remove_files_after_download"`
+	TimeoutSeconds           int    `yaml:"timeout_seconds"`
 }
 
 type SmbNetworkShareConfig struct {
@@ -22,6 +23,7 @@ type SmbNetworkShareConfig struct {
 	Folder                   string            `yaml:"folder" validate:"required"`
 	KeepFolderStructure      bool              `yaml:"keep_folderstructure"`
 	RemoveFilesAfterDownload bool              `yaml:"remove_files_after_download"`
+	TimeoutSeconds           int               `yaml:"timeout_seconds"`
 }
 
 type ImapConfig struct {
@@ -34,4 +36,5 @@ type ImapConfig struct {
 	FilterValue               string            `yaml:"filter_value" validate:"required"`
 	ProcessReadEmails         bool              `yaml:"process_read_emails"`
 	RemoveEmailsAfterDownload bool              `yaml:"remove_emails_after_download"`
+	TimeoutSeconds            int               `yaml:"timeout_seconds"`
 }

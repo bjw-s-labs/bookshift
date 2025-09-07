@@ -12,6 +12,7 @@ type Config struct {
 	OverwriteExistingFiles bool     `yaml:"overwrite_existing_files"`
 	ValidExtensions        []string `yaml:"valid_extensions" validate:"required"`
 	Sources                []Source `yaml:"sources"`
+	Concurrency            int      `yaml:"concurrency"`
 }
 
 func (cfg *Config) Load(path string) error {
