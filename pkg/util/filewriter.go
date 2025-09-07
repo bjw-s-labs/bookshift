@@ -16,7 +16,7 @@ type FileWriter struct {
 
 func NewFileWriter(file *os.File, fileSize int64, showProgressBar bool) *FileWriter {
 	mw := io.MultiWriter(file)
-	if showProgressBar && fileSize > 0 {
+	if showProgressBar && ShowProgressBars && fileSize > 0 {
 		// Create a progress bar
 		bar := progressbar.NewOptions64(
 			int64(fileSize),

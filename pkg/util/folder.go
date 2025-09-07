@@ -2,9 +2,8 @@ package util
 
 import (
 	"os"
-	"path"
 	"path/filepath"
-	"slices"
+	"strings"
 )
 
 // CountFilesInFolder returns the number of files in a folder
@@ -27,8 +26,20 @@ func CountFilesInFolder(folder string, validExtensions []string, recurse bool) (
 			}
 			count += subCount
 		} else if !file.IsDir() {
-			extension := path.Ext(fullPath)
-			if len(validExtensions) > 0 && slices.Contains(validExtensions, extension) {
+			ext := strings.ToLower(filepath.Ext(fullPath))
+			// Normalize configured extensions to lowercase once for comparison
+			if len(validExtensions) > 0 {
+				match := false
+				for _, ve := range validExtensions {
+					if strings.ToLower(ve) == ext {
+						match = true
+						break
+					}
+				}
+				if match {
+					count++
+				}
+			} else {
 				count++
 			}
 		}

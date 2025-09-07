@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/bjw-s-labs/bookshift/pkg/util"
 	"github.com/kha7iq/go-nfs-client/nfs4"
@@ -33,7 +34,7 @@ func NewNfsFile(rootFolder string, subFolder string, file *nfs4.FileInfo, nfsFol
 func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExistingFile bool, keepFolderStructure bool, deleteSourceFile bool) error {
 	// Create folder structure if required
 	if keepFolderStructure {
-		dstFolder = path.Join(dstFolder, f.subFolder)
+		dstFolder = filepath.Join(dstFolder, f.subFolder)
 	}
 
 	// If no destination filename is provided, use the remote file name by default
@@ -41,10 +42,14 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 		dstFileName = f.nfsFile.Name
 	}
 	safeFileName := util.SafeFileName(dstFileName)
-	dstPath := path.Join(dstFolder, safeFileName)
+	dstPath := filepath.Join(dstFolder, safeFileName)
 
 	// Create folder structure if required
 	if _, err := os.Stat(dstFolder); os.IsNotExist(err) {
+		if util.DryRun {
+			slog.Info("[dry-run] Would create local folder", "folder", dstFolder)
+			return nil
+		}
 		slog.Info("Creating local folder", "folder", dstFolder)
 		if err := os.MkdirAll(dstFolder, 0755); err != nil {
 			return err
@@ -65,6 +70,10 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 	}
 
 	// Download the file
+	if util.DryRun {
+		slog.Info("[dry-run] Would download file", "source", f.remotePath, "destination", dstPath)
+		return nil
+	}
 	tmpFile, err := os.CreateTemp(dstFolder, "bookshift-")
 	if err != nil {
 		return err
@@ -77,6 +86,10 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 		return err
 	}
 
+	if err := tmpFile.Sync(); err != nil { // ensure data flushed before rename
+		os.Remove(tmpFile.Name())
+		return err
+	}
 	if err := os.Rename(tmpFile.Name(), dstPath); err != nil {
 		os.Remove(tmpFile.Name())
 		return err
@@ -84,12 +97,16 @@ func (f *NfsFile) Download(dstFolder string, dstFileName string, overwriteExisti
 
 	// Delete the source file if requested
 	if deleteSourceFile {
-		if err := f.Delete(); err != nil {
-			return err
+		if util.DryRun {
+			slog.Info("[dry-run] Would delete file from NFS share", "file", f.remotePath)
+		} else {
+			if err := f.Delete(); err != nil {
+				return err
+			}
 		}
 	}
 
-	slog.Info("Succesfully downloaded file", "filename", safeFileName)
+	slog.Info("Successfully downloaded file", "filename", safeFileName)
 	return nil
 }
 

@@ -1,7 +1,7 @@
 package util
 
 import (
-	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -9,7 +9,7 @@ import (
 // SafeFileName returns safe string that can be used in file names
 func SafeFileName(str string) string {
 	name := strings.ToLower(str)
-	name = path.Clean(path.Base(name))
+	name = filepath.Clean(filepath.Base(name))
 	name = strings.Trim(name, " ")
 	separators, err := regexp.Compile(`[ &_=+:]`)
 	if err == nil {

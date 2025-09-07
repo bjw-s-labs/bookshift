@@ -18,7 +18,7 @@ var (
 	ndbLibraryRescan = nickeldbus.LibraryRescan
 )
 
-// nickelUSBplugAddRemove simulates pugging in a USB cable
+// nickelUSBplugAddRemove simulates plugging in a USB cable
 // we'll use this in case NickelDbus is not installed
 func nickelUSBplugAction(action string) {
 	const nickelHWstatusPipe = "/tmp/nickel-hardware-status"
@@ -32,7 +32,7 @@ func nickelUSBplugAction(action string) {
 	_, _ = nickelPipe.WriteString("usb plug " + action)
 }
 
-// nickelUSBplugAddRemove simulates pugging in a USB cable
+// nickelUSBplugAddRemove simulates plugging in a USB cable
 // we'll use this in case NickelDbus is not installed
 func nickelUSBplugAddRemove() {
 	nickelUSBplugAction("add")

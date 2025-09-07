@@ -11,9 +11,16 @@ import (
 	"github.com/bjw-s-labs/bookshift/pkg/util"
 )
 
-type RunCommand struct{}
+type RunCommand struct {
+	DryRun     bool `help:"Show what would be done without making changes"`
+	NoProgress bool `help:"Disable progress bars during downloads"`
+}
 
-func (*RunCommand) Run(cfg *config.Config, logger *slog.Logger) error {
+func (r *RunCommand) Run(cfg *config.Config, logger *slog.Logger) error {
+	// Apply runtime toggles
+	util.DryRun = r.DryRun
+	util.ShowProgressBars = !r.NoProgress
+
 	numberOfFilesAtStart, err := countFiles(cfg.TargetFolder, cfg.ValidExtensions, true)
 	if err != nil {
 		return err
@@ -22,19 +29,34 @@ func (*RunCommand) Run(cfg *config.Config, logger *slog.Logger) error {
 	for _, src := range cfg.Sources {
 		switch src.Type {
 		case "nfs":
-			if err := doNfs(src.Config.(*config.NfsNetworkShareConfig), cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
+			cfgNfs, ok := src.Config.(*config.NfsNetworkShareConfig)
+			if !ok {
+				logger.Error("invalid configuration type for NFS source")
+				continue
+			}
+			if err := doNfs(cfgNfs, cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
 				logger.Error("failed to sync from NFS share", "error", err)
 				continue
 			}
 
 		case "smb":
-			if err := doSmb(src.Config.(*config.SmbNetworkShareConfig), cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
+			cfgSmb, ok := src.Config.(*config.SmbNetworkShareConfig)
+			if !ok {
+				logger.Error("invalid configuration type for SMB source")
+				continue
+			}
+			if err := doSmb(cfgSmb, cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
 				logger.Error("failed to sync from SMB share", "error", err)
 				continue
 			}
 
 		case "imap":
-			if err := doImap(src.Config.(*config.ImapConfig), cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
+			cfgImap, ok := src.Config.(*config.ImapConfig)
+			if !ok {
+				logger.Error("invalid configuration type for IMAP source")
+				continue
+			}
+			if err := doImap(cfgImap, cfg.TargetFolder, cfg.ValidExtensions, cfg.OverwriteExistingFiles); err != nil {
 				logger.Error("failed to sync from IMAP server", "error", err)
 				continue
 			}
