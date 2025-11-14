@@ -8,7 +8,7 @@ require (
 	github.com/go-playground/sensitive v0.0.1
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/goccy/go-yaml v1.18.0
-	github.com/godbus/dbus/v5 v5.1.0
+	github.com/godbus/dbus/v5 v5.2.0
 	github.com/jfjallid/go-smb v0.6.6
 	github.com/kha7iq/go-nfs-client v1.0.0
 	github.com/lmittmann/tint v1.1.2
