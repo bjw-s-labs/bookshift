@@ -3,7 +3,7 @@ module github.com/bjw-s-labs/bookshift
 go 1.25.1
 
 require (
-	github.com/alecthomas/kong v1.12.1
+	github.com/alecthomas/kong v1.13.0
 	github.com/emersion/go-imap/v2 v2.0.0-beta.7
 	github.com/go-playground/sensitive v0.0.1
 	github.com/go-playground/validator/v10 v10.28.0
