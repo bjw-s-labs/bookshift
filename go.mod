@@ -4,7 +4,7 @@ go 1.25.1
 
 require (
 	github.com/alecthomas/kong v1.14.0
-	github.com/emersion/go-imap/v2 v2.0.0-beta.7
+	github.com/emersion/go-imap/v2 v2.0.0-beta.8
 	github.com/go-playground/sensitive v0.0.1
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/goccy/go-yaml v1.19.2
