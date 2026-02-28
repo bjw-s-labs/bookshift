@@ -71,6 +71,8 @@ github.com/jfjallid/go-smb v0.6.6 h1:XfSCLrq08MbkBXLbBu+SPazhmPa1De5n5ELAlldf3K4
 github.com/jfjallid/go-smb v0.6.6/go.mod h1:Y/MMrSlRHwA9ZbnIoPV1PbEkOqW2UE4Gh0/bpmTqdOg=
 github.com/jfjallid/go-smb v0.6.7 h1:LvqFdJiJbgIFBtp+ZfTfOTOnakQoTbrUErZbipICZBI=
 github.com/jfjallid/go-smb v0.6.7/go.mod h1:Y/MMrSlRHwA9ZbnIoPV1PbEkOqW2UE4Gh0/bpmTqdOg=
+github.com/jfjallid/go-smb v0.7.0 h1:RukTO5pMvioWeYxvsikGRTpICHyYbHBIZ2hPRAVVtwU=
+github.com/jfjallid/go-smb v0.7.0/go.mod h1:oaggPuQ7Qw+88AhU1bdcl371xt4OfRmuS2Lz38N9dnM=
 github.com/jfjallid/gofork v1.7.6 h1:OYyS2HH597860gkDxxjNsl+NZRxoAnuRI6ZsP++kYKE=
 github.com/jfjallid/gofork v1.7.6/go.mod h1:r1EH4W9KY5iqtiGhAupnbzMRONsLDApdJ9EZH5NWFSc=
 github.com/jfjallid/gokrb5/v8 v8.5.1 h1:6Mt7/s5Am1ygDWDoglP/9VH+k1io8ln7hmMF7BiEPFA=
@@ -81,6 +83,8 @@ github.com/jfjallid/mstypes v0.0.1 h1:/USSXByO5ZMYDmc6mwcK+azKNVwym5vzrAv5uIxXy+
 github.com/jfjallid/mstypes v0.0.1/go.mod h1:a3RS3XrUS/+1FbmUNDHB2cJ878Z//brwfxBTG9PB9/M=
 github.com/jfjallid/ndr v0.0.1 h1:lnLIl7s6elqRnBgI2FZwWvzY0+hVF6eoWAJEDDyNi9c=
 github.com/jfjallid/ndr v0.0.1/go.mod h1:WWJb+oCrKbcTcX5wGvXUNoTUsRLk4qmhP2dfDsGXW1Q=
+github.com/jfjallid/ndr v0.0.2 h1:KOATfG1aoLcxXvE4v6tqDBlxB+f23cObNed+zrhizRw=
+github.com/jfjallid/ndr v0.0.2/go.mod h1:WWJb+oCrKbcTcX5wGvXUNoTUsRLk4qmhP2dfDsGXW1Q=
 github.com/kha7iq/go-nfs-client v1.0.0 h1:fZ84vsHGqhM+5H6CTVa5Y9rPTRptYuqQUQhDJeB1bUA=
 github.com/kha7iq/go-nfs-client v1.0.0/go.mod h1:8rff/CrV/Z6WSiCHjKjzqmT36k+zYTW0zOg2K/8Y0+I=
 github.com/leodido/go-urn v1.4.0 h1:WT9HwE9SGECu3lg4d/dIA+jxlljEa1/ffXKmRjqdmIQ=
